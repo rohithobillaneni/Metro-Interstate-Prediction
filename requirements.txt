@@ -7,4 +7,6 @@ flask
 fastapi
 uvicorn
 ipykernel
+catboost
+xgboost
 -e .

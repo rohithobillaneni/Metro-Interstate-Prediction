@@ -1,0 +1,3 @@
+Model Evaluation Results:
+MAE: 699.65
+R² Score: 0.74
