@@ -9,4 +9,7 @@ uvicorn
 ipykernel
 catboost
 xgboost
+plotly
+folium
+streamlit_folium
 -e .
