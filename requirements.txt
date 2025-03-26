@@ -1,8 +1,9 @@
 pandas
+requests
 numpy
 matplotlib
 seaborn
-scikit-learn
+scikit-learn==1.6.0
 flask
 fastapi
 uvicorn
@@ -12,4 +13,3 @@ xgboost
 plotly
 folium
 streamlit_folium
--e .

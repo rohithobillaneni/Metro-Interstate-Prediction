@@ -59,7 +59,7 @@ with col2:
 if predict_button:
     with st.spinner("🔄 Predicting..."):
         # API request
-        api_url = "http://127.0.0.1:8000/predict"
+        api_url = "http://traffic-backend:8000/predict"
         data = {
             "holiday": holiday,
             "temp": temp,

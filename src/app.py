@@ -3,13 +3,21 @@ from pydantic import BaseModel
 import pickle
 import pandas as pd
 import numpy as np
+import os
 
 app = FastAPI()
 
-# Load the preprocessor and model (model pipeline includes preprocessing)
-with open("C:/Users/Rohith/Desktop/Metro_Traffic_Volume_Prediction/models/traffic_model.pkl", 'rb') as model_file:
+# Use an absolute path inside the container for the model file.
+MODEL_PATH = os.path.join("/app", "models", "traffic_model.pkl")
+print(f"Looking for model at: {MODEL_PATH}")
+
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
+
+with open(MODEL_PATH, "rb") as model_file:
     final_pipeline = pickle.load(model_file)
 
+    
 # Input data schema using Pydantic for validation
 class TrafficData(BaseModel):
     temp: float
@@ -79,8 +87,6 @@ async def predict_traffic(data: TrafficData):
 
         print("Received data:")
         print(input_data)
-
-        print(input_data.dtypes)
 
         # Use the final pipeline (which includes both the preprocessor and model)
         prediction = final_pipeline.predict(input_data)[0]
