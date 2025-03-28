@@ -1,10 +1,8 @@
-
----
-
-```markdown
 # Metro Traffic Volume Prediction
 
-A complete end-to-end machine learning project to predict hourly traffic volume on Metro Interstates. The project includes data preprocessing, feature engineering, model training & evaluation, a FastAPI backend for predictions, a Streamlit frontend for user interaction, and containerization using Docker.
+A complete end-to-end machine learning project to predict hourly traffic volume on a metro interstate. The project covers data ingestion from Cassandra, data preprocessing and transformation, model training and evaluation, a FastAPI backend for predictions, a Streamlit frontend for interactive use, and containerization with Docker.
+
+---
 
 ## Table of Contents
 
@@ -19,39 +17,52 @@ A complete end-to-end machine learning project to predict hourly traffic volume 
 - [Data Transformation & Model Training](#data-transformation--model-training)
 - [API & Frontend](#api--frontend)
 - [Usage](#usage)
-- [Deployment](#deployment)
-- [Future Work](#future-work)
+- [Deployment & Future Work](#deployment--future-work)
 - [License](#license)
 - [Contact](#contact)
 
+---
+
 ## Overview
 
-This project predicts hourly traffic volume on a metro interstate using machine learning. The system performs:
-- Data ingestion from a Cassandra database.
-- Data preprocessing (cleaning, outlier removal, feature extraction, and feature engineering).
-- Feature transformation using pipelines (scaling, encoding, and cyclic encoding).
-- Model training with multiple machine learning algorithms.
-- Evaluation and selection of the best performing model.
-- Deployment of a FastAPI backend serving predictions.
-- A Streamlit frontend for interactive model testing.
-- Containerization with Docker for portability and easy deployment.
+This project predicts hourly traffic volume on a metro interstate using machine learning. It performs:
+- Data ingestion from Cassandra.
+- Data cleaning, feature engineering, and transformation.
+- Model training with multiple algorithms and selection of the best model.
+- Deployment of a FastAPI backend to serve predictions.
+- An interactive Streamlit frontend to visualize predictions.
+- Containerization with Docker and Docker Compose for portability.
+
+---
 
 ## Features
 
-- **Data Preprocessing:** Cleans and prepares raw traffic data.
-- **Feature Engineering:** Extracts and transforms time and weather-related features.
-- **Model Training:** Evaluates multiple models and selects the best (using CatBoost in this case).
-- **API Deployment:** FastAPI-based prediction service.
-- **Interactive Frontend:** Streamlit UI for entering traffic conditions and visualizing predictions.
-- **Dockerized:** Fully containerized application for easy deployment.
+- **Data Preprocessing:**  
+  Loads raw traffic data from Cassandra, converts temperature units, removes outliers, extracts time features (weekday, hour, month), categorizes hour into time slots, and converts holidays to binary.
+
+- **Data Transformation:**  
+  Applies numerical scaling, one-hot encoding, ordinal encoding, and cyclic encoding through a robust pipeline.
+
+- **Model Training & Evaluation:**  
+  Evaluates multiple models using cross-validation, selects the best (e.g., CatBoost), and saves the final pipeline.
+
+- **API & Frontend:**  
+  A FastAPI backend exposes a `/predict` endpoint, and a Streamlit frontend provides an interactive UI for prediction and visualization.
+
+- **Dockerized Deployment:**  
+  Both backend and frontend are containerized with Docker and managed via Docker Compose.
+
+---
 
 ## Technologies
 
 - **Programming Language:** Python
-- **Libraries:** Pandas, NumPy, scikit-learn, CatBoost, XGBoost, FastAPI, Uvicorn, Streamlit, Plotly
-- **Database:** Cassandra (for raw data ingestion)
+- **Libraries:** Pandas, NumPy, scikit-learn, CatBoost, XGBoost, FastAPI, Uvicorn, Streamlit, Plotly, Cassandra Driver
+- **Database:** Cassandra
 - **Containerization:** Docker, Docker Compose
 - **Version Control:** Git, GitHub
+
+---
 
 ## Project Structure
 
@@ -217,8 +228,3 @@ For production deployment:
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Contact
-
-Developed by **Rohith Obillaneni**  
-Email: [your-email@example.com](mailto:your-email@example.com)  
-GitHub: [https://github.com/<your-username>](https://github.com/<your-username>)
