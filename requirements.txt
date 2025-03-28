@@ -9,7 +9,9 @@ fastapi
 uvicorn
 ipykernel
 catboost
+cassandra-driver
 xgboost
 plotly
+streamlit
 folium
 streamlit_folium

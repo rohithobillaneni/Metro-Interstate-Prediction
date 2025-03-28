@@ -58,7 +58,14 @@ with col2:
 # Prediction Logic
 if predict_button:
     with st.spinner("🔄 Predicting..."):
+
+        
+        #If running locally use below url (api_url = "http://127.0.0.1:8000/predict") and 
+        #if deploying using dockers please use below url (api_url = "http://traffic-backend:8000/predict)
+
+
         # API request
+        #api_url = "http://127.0.0.1:8000/predict"
         api_url = "http://traffic-backend:8000/predict"
         data = {
             "holiday": holiday,

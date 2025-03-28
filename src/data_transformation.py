@@ -41,5 +41,5 @@ def get_preprocessing_pipeline():
         ('binary', 'passthrough', binary_features),
         ('cyclic', cyclic_transformer, cyclic_features)
     ])
-
+    print("Data Transformation Completed!")
     return preprocessor

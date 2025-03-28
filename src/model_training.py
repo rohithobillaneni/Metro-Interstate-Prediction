@@ -62,7 +62,7 @@ print(results_df)
 # Plot model performance
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+1
 plt.figure(figsize=(10, 5))
 sns.barplot(y=results_df['Model'], x=results_df['R² Score'])
 plt.title('Model Comparison (R² Score)')

@@ -7,8 +7,13 @@ import os
 
 app = FastAPI()
 
+
 # Use an absolute path inside the container for the model file.
 MODEL_PATH = os.path.join("/app", "models", "traffic_model.pkl")
+
+# Use below path if running locally
+#MODEL_PATH = 'C:/Users/Rohith/Desktop/Metro_Traffic_Volume_Prediction/models/traffic_model.pkl'
+
 print(f"Looking for model at: {MODEL_PATH}")
 
 if not os.path.exists(MODEL_PATH):
