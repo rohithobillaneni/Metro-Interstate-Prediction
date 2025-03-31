@@ -2,6 +2,10 @@
 
 A complete end-to-end machine learning project to predict hourly traffic volume on a metro interstate. The project covers data ingestion from Cassandra, data preprocessing and transformation, model training and evaluation, a FastAPI backend for predictions, a Streamlit frontend for interactive use, and containerization with Docker.
 
+# Front-End
+
+![Main-Page](https://github.com/user-attachments/assets/4b2dc36e-353e-4b0e-abf2-cc116485bb11)
+
 ---
 
 ## Table of Contents
