@@ -1,5 +1,5 @@
 import csv
-from dataclasses import FrozenInstanceError, replace
+from dataclasses import FrozenInstanceError, asdict, replace
 from datetime import datetime, timezone
 from pathlib import Path
 import tempfile
@@ -11,6 +11,7 @@ from src.offline_data import (
     feature_values,
     hour_category,
     load_csv,
+    load_development_csv,
     partition_records,
 )
 
@@ -303,6 +304,125 @@ class OfflineDataTests(unittest.TestCase):
                 records[0],
                 replace(records[1], date_time=records[1].date_time.replace(tzinfo=timezone.utc)),
             ])
+
+    def test_development_loader_excludes_reserved_values_before_validation(self):
+        development = [self.row(traffic_volume="0"), self.row("2017-01-01 00:00:00")]
+        self.write_rows(development)
+        expected_records, _ = load_csv(self.path)
+        for changes in (
+            {"traffic_volume": "invalid-reserved-label"},
+            {"traffic_volume": "nan"},
+            {"traffic_volume": "inf"},
+            {"traffic_volume": "-1"},
+            {"temp": "not a number", "clouds_all": "inf", "weather_main": ""},
+            {"temp": "0", "clouds_all": "-1", "weather_main": " "},
+        ):
+            with self.subTest(changes=changes):
+                # Both reserved rows share a timestamp but disagree on targets.
+                # Neither their values nor that disagreement may affect M2.
+                self.write_rows(development + [
+                    self.row("2018-01-01 00:00:00", **changes),
+                    self.row("2018-01-01 00:00:00", traffic_volume="999"),
+                ])
+                records, diagnostics = load_development_csv(self.path)
+                self.assertEqual(records, expected_records)
+                self.assertEqual(asdict(diagnostics), {
+                    "raw_count": 4,
+                    "invalid_temp_dropped": 0,
+                    "duplicate_extras": 0,
+                    "distinct_timestamps": 2,
+                    "reserved_rows_excluded": 2,
+                })
+
+    def test_m1_still_validates_reserved_targets_and_keeps_its_diagnostics_schema(self):
+        development = self.row("2017-12-31 23:00:00", traffic_volume="0")
+        reserved = self.row("2018-01-01 00:00:00", traffic_volume="invalid-reserved-label")
+        self.write_rows([development, reserved])
+        with self.assertRaisesRegex(ValueError, "traffic_volume must be numeric"):
+            load_csv(self.path)
+        records, diagnostics = load_development_csv(self.path)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(diagnostics.reserved_rows_excluded, 1)
+        self.write_rows([development, {**reserved, "traffic_volume": "456"}])
+        records, diagnostics = load_csv(self.path)
+        self.assertEqual(len(records), 2)
+        self.assertEqual(asdict(diagnostics), {
+            "raw_count": 2, "invalid_temp_dropped": 0,
+            "duplicate_extras": 0, "distinct_timestamps": 2,
+        })
+
+    def test_development_cutoff_and_cleaning_counts_account_for_every_row(self):
+        self.write_rows([
+            self.row("2017-12-31 23:59:59", traffic_volume="0", weather_main="Rain"),
+            self.row("2018-01-01 00:00:00", traffic_volume="invalid"),
+            self.row("2017-12-31 23:59:59", traffic_volume="0", weather_main="Snow"),
+            self.row("2016-06-01 00:00:00", temp="0", traffic_volume="5"),
+            self.row("2016-06-01 00:00:00", temp="280", traffic_volume="5"),
+            self.row("2018-01-01 00:00:00", traffic_volume="conflicting"),
+            self.row("2030-01-01 00:00:00", temp="nan", traffic_volume="inf"),
+        ])
+        records, diagnostics = load_development_csv(self.path)
+        self.assertEqual([record.date_time for record in records], [
+            datetime(2016, 6, 1), datetime(2017, 12, 31, 23, 59, 59),
+        ])
+        self.assertEqual(records[1].traffic_volume, 0)
+        self.assertEqual(records[1].weather_main, "Rain")
+        self.assertEqual(asdict(diagnostics), {
+            "raw_count": 7, "invalid_temp_dropped": 1, "duplicate_extras": 1,
+            "distinct_timestamps": 2, "reserved_rows_excluded": 3,
+        })
+        self.assertEqual(diagnostics.raw_count, (
+            diagnostics.reserved_rows_excluded + diagnostics.invalid_temp_dropped
+            + diagnostics.duplicate_extras + diagnostics.distinct_timestamps
+        ))
+        with self.assertRaises(FrozenInstanceError):
+            diagnostics.reserved_rows_excluded = 0
+
+    def test_development_loader_still_validates_included_values_and_target_conflicts(self):
+        for changes, message in (
+            ({"traffic_volume": "bad"}, "traffic_volume"),
+            ({"temp": "nan"}, "temp"),
+            ({"clouds_all": "101"}, "clouds_all"),
+            ({"weather_main": ""}, "weather_main"),
+        ):
+            with self.subTest(changes=changes):
+                self.write_rows([self.row("2017-12-31 23:00:00", **changes)])
+                with self.assertRaisesRegex(ValueError, message):
+                    load_development_csv(self.path)
+        self.write_rows([
+            self.row("2017-12-31 23:00:00", traffic_volume="1", temp="0"),
+            self.row("2017-12-31 23:00:00", traffic_volume="2"),
+        ])
+        with self.assertRaisesRegex(ValueError, "conflicting traffic_volume"):
+            load_development_csv(self.path)
+
+    def test_reserved_timestamp_and_csv_row_shape_still_require_validation(self):
+        self.write_rows([self.row(), self.row("2018-not-a-timestamp", traffic_volume="bad")])
+        with self.assertRaisesRegex(ValueError, "date_time"):
+            load_development_csv(self.path)
+        self.write_rows([self.row()])
+        with self.path.open("a", encoding="utf-8") as output:
+            output.write("2018-01-01 00:00:00,None,280,40,Clear\n")
+        with self.assertRaisesRegex(ValueError, "row width"):
+            load_development_csv(self.path)
+
+    def test_development_records_match_m1_development_subset_for_valid_input(self):
+        self.write_rows([
+            self.row("2017-12-31 23:00:00"),
+            self.row("2018-01-01 00:00:00"),
+            self.row(),
+            self.row("2017-12-31 23:00:00", weather_main="Snow"),
+        ])
+        all_records, _ = load_csv(self.path)
+        development, _ = load_development_csv(self.path)
+        self.assertEqual(development, tuple(
+            record for record in all_records if record.date_time < datetime(2018, 1, 1)
+        ))
+
+    def test_only_reserved_rows_do_not_form_a_development_dataset(self):
+        self.write_rows([self.row("2018-01-01 00:00:00", traffic_volume="invalid")])
+        with self.assertRaisesRegex(ValueError, "no usable records"):
+            load_development_csv(self.path)
 
 
 if __name__ == "__main__":

@@ -38,3 +38,22 @@ jobs:
           assert set(actual['metrics']) == set(reference['metrics'])
           # Floating-point digests/metrics need not be identical across platforms.
           PY
+      - name: Reproduce fixed temporal development windows
+        run: python -m src.temporal_evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output temporal-result.json
+      - name: Check temporal protocol and cohorts
+        run: |
+          python - <<'PYCODE'
+          import json
+          from pathlib import Path
+          actual = json.loads(Path('temporal-result.json').read_text())
+          reference = json.loads(Path('benchmarks/temporal-development-2017.json').read_text())
+          for key in ('protocol', 'protocol_sha256', 'source_sha256', 'source_code_sha256', 'evaluation_lock_sha256', 'cleaning', 'pooled_count'):
+              assert actual[key] == reference[key], key
+          assert len(actual['folds']) == len(reference['folds']) == 4
+          for fold, expected in zip(actual['folds'], reference['folds']):
+              for key in ('validation_start', 'validation_end', 'train', 'validation', 'coverage', 'baselines'):
+                  assert fold[key] == expected[key], key
+              assert [(r['date_time'], r['actual']) for r in fold['predictions']] == [(r['date_time'], r['actual']) for r in expected['predictions']]
+          # Tests recompute pooled/paired metrics from predictions. Floating-point
+          # predictions/metrics need not be identical across platforms.
+          PYCODE

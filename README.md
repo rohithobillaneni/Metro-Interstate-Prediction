@@ -20,6 +20,10 @@ no Cassandra instance, API credentials or saved model. See the
 [dataset attribution](DATASET.md) and [contribution guide](CONTRIBUTING.md).
 This is same-hour estimation using observed weather, not an advance forecast.
 
+For fixed expanding-window development validation and an exact seasonal
+baseline, see the [temporal evaluation protocol](docs/temporal-evaluation.md).
+It evaluates four 2017 weeks and leaves 2018 unscored.
+
 For newly trained local inference and API startup, follow the
 [serving instructions](docs/serving.md). The API uses an explicitly trusted
 fresh artifact; it never falls back to the historical pickle model.

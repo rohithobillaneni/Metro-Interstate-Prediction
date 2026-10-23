@@ -47,3 +47,14 @@ The synchronous prediction route runs in FastAPI's worker pool. Startup fails
 when configuration or artifact validation fails; unexpected prediction errors
 return a generic 500 response. This is a local reference API, not an authenticated
 public deployment.
+
+## Fixed temporal development evaluation
+
+`load_development_csv` shares parsing/cleaning with the original loader but excludes
+reserved 2018 rows before target/feature validation. Its separate diagnostics count
+excluded raw rows; the M1 loader and report contract remain unchanged.
+`src.temporal_evaluation` creates four fixed expanding training folds and fresh
+pipelines, performs exact seven-calendar-day training lookups with calendar/global
+fallbacks, and retains same-cohort raw predictions and pooled metrics. No service,
+new dependency or general splitting framework is introduced. See the
+[protocol](temporal-evaluation.md) for edge cases and limitations.
