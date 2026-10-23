@@ -24,7 +24,10 @@ def encode_holiday(value: str | None) -> int:
     return int(value is not None and value.strip() not in {"", "None"})
 
 
-def _hour_category(hour: int) -> str:
+def hour_category(hour: int) -> str:
+    """Map a clock hour to the project's existing six time-of-day categories."""
+    if type(hour) is not int or not 0 <= hour <= 23:
+        raise ValueError("hour must be an integer between 0 and 23")
     return (
         "Late Night",
         "Early Morning",
@@ -33,6 +36,56 @@ def _hour_category(hour: int) -> str:
         "Evening",
         "Night",
     )[hour // 4]
+
+
+def feature_values(
+    *,
+    temp: float,
+    clouds_all: float,
+    weather_main: str,
+    holiday: int,
+    weekday: int,
+    hour: int,
+    month: int,
+) -> dict[str, float | int | str]:
+    """Validate shared training and serving features; temperature is in Celsius.
+
+    Numeric strings and booleans are rejected, not coerced. Each call returns
+    independent feature data with the existing transformer's column names.
+    """
+    for name, value in (("temp", temp), ("clouds_all", clouds_all)):
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"{name} must be a finite number")
+        try:
+            finite = math.isfinite(value)
+        except OverflowError as exc:
+            raise ValueError(f"{name} must be a finite number") from exc
+        if not finite:
+            raise ValueError(f"{name} must be a finite number")
+    if temp <= -273.15:
+        raise ValueError("temp must be greater than -273.15 Celsius")
+    if not 0 <= clouds_all <= 100:
+        raise ValueError("clouds_all must be between 0 and 100")
+    if not isinstance(weather_main, str) or not 1 <= len(weather_main.strip()) <= 64:
+        raise ValueError("weather_main must contain between 1 and 64 characters after trimming")
+    for name, value, minimum, maximum in (
+        ("holiday", holiday, 0, 1),
+        ("weekday", weekday, 0, 6),
+        ("month", month, 1, 12),
+    ):
+        if type(value) is not int or not minimum <= value <= maximum:
+            raise ValueError(f"{name} must be an integer between {minimum} and {maximum}")
+    category = hour_category(hour)
+    return {
+        "temp": temp,
+        "clouds_all": clouds_all,
+        "weather_main": weather_main.strip(),
+        "holiday": holiday,
+        "weekday": weekday,
+        "hour": hour,
+        "month": month,
+        "hour_category": category,
+    }
 
 
 @dataclass(frozen=True)
@@ -46,16 +99,15 @@ class TrafficRecord:
 
     def features(self) -> dict[str, float | int | str]:
         """Return independent feature data using the existing transformer names."""
-        return {
-            "temp": self.temp,
-            "clouds_all": self.clouds_all,
-            "weather_main": self.weather_main,
-            "holiday": self.holiday,
-            "weekday": self.date_time.weekday(),
-            "hour": self.date_time.hour,
-            "month": self.date_time.month,
-            "hour_category": _hour_category(self.date_time.hour),
-        }
+        return feature_values(
+            temp=self.temp,
+            clouds_all=self.clouds_all,
+            weather_main=self.weather_main,
+            holiday=self.holiday,
+            weekday=self.date_time.weekday(),
+            hour=self.date_time.hour,
+            month=self.date_time.month,
+        )
 
 
 @dataclass(frozen=True)

@@ -1,111 +1,105 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import pickle
-import pandas as pd
-import numpy as np
+"""Local API for an explicitly trusted, newly trained Metro model bundle."""
+
+from contextlib import asynccontextmanager
+import math
 import os
+from pathlib import Path
+from typing import Annotated, Literal
 
-app = FastAPI()
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+import pandas as pd
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+
+from src.artifacts import load_bundle
+from src.offline_data import feature_values, hour_category
 
 
-# Use an absolute path inside the container for the model file.
-MODEL_PATH = os.path.join("/app", "models", "traffic_model.pkl")
+WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+MONTHS = (
+    "January", "February", "March", "April", "May", "June", "July", "August",
+    "September", "October", "November", "December",
+)
 
-# Use below path if running locally
-#MODEL_PATH = 'C:/Users/Rohith/Desktop/Metro_Traffic_Volume_Prediction/models/traffic_model.pkl'
 
-print(f"Looking for model at: {MODEL_PATH}")
-
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
-
-with open(MODEL_PATH, "rb") as model_file:
-    final_pipeline = pickle.load(model_file)
-
-    
-# Input data schema using Pydantic for validation
 class TrafficData(BaseModel):
-    temp: float
-    clouds_all: int
-    holiday: str
-    weather_main: str
-    weekday: str
-    hour: int
-    hour_category: str
-    month: str
+    model_config = ConfigDict(strict=True, extra="forbid")
 
-# Helper function for encoding inputs
-def preprocess_input(data: dict):
-    # Define mappings for categorical features
-    encoding_map = {
-        "holiday": {"No": 0, "Yes": 1},
-        "weekday": {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6},
-        "month": {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
-                  "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12}
-    }
+    temp: Annotated[float, Field(allow_inf_nan=False, gt=-273.15)]
+    clouds_all: Annotated[float, Field(allow_inf_nan=False, ge=0, le=100)]
+    holiday: Literal["No", "Yes"]
+    weather_main: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
+    weekday: Literal["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    hour: Annotated[int, Field(ge=0, le=23)]
+    hour_category: Literal["Early Morning", "Morning", "Afternoon", "Evening", "Night", "Late Night"] | None = None
+    month: Literal["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-    # Check if any required columns are missing
-    missing_columns = [col for col in encoding_map.keys() if col not in data]
-    if missing_columns:
-        raise HTTPException(status_code=400, detail=f"Missing required columns: {', '.join(missing_columns)}")
+    @model_validator(mode="after")
+    def consistent_hour_category(self):
+        if self.hour_category is not None and self.hour_category != hour_category(self.hour):
+            raise ValueError("hour_category contradicts hour; omit it to derive the category")
+        return self
 
-    # Map categorical columns to integers
-    for col, mapping in encoding_map.items():
-        if col in data:
-            if isinstance(data[col], str):  # Ensure categorical values are strings
-                data[col] = mapping.get(data[col], data[col])  # Use the mapping, or keep the same if not found
-            else:
-                raise HTTPException(status_code=400, detail=f"Invalid value for {col}: {data[col]}. Expected a string value.")
-
-    # Ensure numeric columns are properly handled
-    if not isinstance(data['temp'], (int, float)) or not isinstance(data['clouds_all'], (int, float)):
-        raise HTTPException(status_code=400, detail=f"Invalid value for numeric fields. Expected numbers.")
-
-    # Convert the processed data back to a dictionary
-    return data
+    def features(self) -> dict:
+        return feature_values(
+            temp=self.temp,
+            clouds_all=self.clouds_all,
+            holiday=int(self.holiday == "Yes"),
+            weather_main=self.weather_main,
+            weekday=WEEKDAYS.index(self.weekday),
+            hour=self.hour,
+            month=MONTHS.index(self.month) + 1,
+        )
 
 
-# Prediction endpoint
-@app.post("/predict")
-async def predict_traffic(data: TrafficData):
-    try:
-        # Preprocess input data
-        data_dict = data.dict()
+def create_app(
+    model_directory: str | Path | None = None,
+    trusted_manifest_sha256: str | None = None,
+) -> FastAPI:
+    """Import safely; configure and verify a trusted bundle at lifespan startup."""
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        directory = model_directory if model_directory is not None else os.environ.get("METRO_MODEL_DIR")
+        pin = trusted_manifest_sha256 if trusted_manifest_sha256 is not None else os.environ.get("METRO_MODEL_MANIFEST_SHA256")
+        if not directory or not pin:
+            raise RuntimeError("METRO_MODEL_DIR and separately trusted METRO_MODEL_MANIFEST_SHA256 are required")
+        application.state.model = load_bundle(directory, pin)
+        try:
+            yield
+        finally:
+            del application.state.model
 
-        # Check that all values are valid
-        for key, value in data_dict.items():
-            # Ensure numeric fields are actually numbers
-            if key in ["temp", "clouds_all", 'hour']:
-                if not isinstance(value, (int, float)):
-                    raise HTTPException(status_code=400, detail=f"Invalid value for {key}: {value}. Must be a numeric type.")
-            
-            # Ensure categorical fields are strings and check if they exist in the encoding map
-            if key in ["holiday", "weather_main", "weekday", "hour_category", "month"]:
-                if not isinstance(value, str):
-                    raise HTTPException(status_code=400, detail=f"Invalid value for {key}: {value}. Must be a string type.")
-        
-        # Process the input data
-        processed_data = preprocess_input(data_dict)
+    application = FastAPI(lifespan=lifespan)
 
-        # Convert the processed data into a DataFrame for prediction
-        input_data = pd.DataFrame([processed_data])
+    @application.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError):
+        # Do not echo input/ctx: NaN, Infinity and ValueError objects are not JSON
+        # serializable, and reflecting arbitrary request data is unnecessary.
+        details = [
+            {"loc": list(error["loc"]), "type": error["type"], "msg": error["msg"]}
+            for error in exc.errors()
+        ]
+        return JSONResponse(status_code=422, content={"detail": details})
 
-        print("Received data:")
-        print(input_data)
-
-        # Use the final pipeline (which includes both the preprocessor and model)
-        prediction = final_pipeline.predict(input_data)[0]
-        
-        # Return the prediction
+    @application.post("/predict")
+    def predict_traffic(data: TrafficData, request: Request):
+        # A sync endpoint places CPU work in FastAPI's worker pool.
+        try:
+            prediction = float(request.app.state.model.predict(pd.DataFrame([data.features()]))[0])
+            if not math.isfinite(prediction) or prediction < 0:
+                raise ValueError("Model returned invalid traffic volume")
+        except Exception as exc:
+            # HTTP boundary: retain server exception context, never return paths,
+            # request contents or deserialization details to the client.
+            raise HTTPException(status_code=500, detail="Prediction failed") from exc
         return {"prediction": prediction}
 
-    except HTTPException as e:
-        raise e  # Propagate HTTPExceptions for invalid data types
-    except Exception as e:
-        print(f"Unexpected error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+    @application.get("/")
+    def read_root():
+        return {"message": "Welcome to the Metro Traffic Volume Prediction API!"}
 
-# Root endpoint (optional, for basic check)
-@app.get("/")
-async def read_root():
-    return {"message": "Welcome to the Metro Traffic Volume Prediction API!"}
+    return application
+
+
+app = create_app()

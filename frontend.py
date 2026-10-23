@@ -1,5 +1,8 @@
 import streamlit as st
 import requests
+import os
+
+from src.offline_data import hour_category as derive_hour_category
 import plotly.graph_objects as go
 
 # Set page configuration
@@ -47,7 +50,8 @@ holiday = st.sidebar.selectbox("🎉 Is it a holiday?", ["No", "Yes"])
 weather_main = st.sidebar.selectbox("🌦 Weather Condition", ["Clear", "Clouds", "Rain", "Snow", "Fog"])
 weekday = st.sidebar.selectbox("📆 Day of the Week", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
 hour = st.sidebar.number_input("⏰ Hour (0-23)", min_value=0, max_value=23, value=12)
-hour_category = st.sidebar.selectbox("🕒 Time of Day", ['Early Morning', 'Morning', 'Afternoon', 'Evening', 'Night', 'Late Night'])
+hour_category = derive_hour_category(hour)
+st.sidebar.caption(f"Time of day: {hour_category}")
 month = st.sidebar.selectbox("📅 Month", ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
 
 # Predict Button (Centered)
@@ -66,7 +70,7 @@ if predict_button:
 
         # API request
         #api_url = "http://127.0.0.1:8000/predict"
-        api_url = "http://traffic-backend:8000/predict"
+        api_url = os.environ.get("METRO_API_URL", "http://127.0.0.1:8000/predict")
         data = {
             "holiday": holiday,
             "temp": temp,
@@ -77,7 +81,11 @@ if predict_button:
             "hour_category": hour_category,
             "month": month
         }
-        response = requests.post(api_url, json=data)
+        try:
+            response = requests.post(api_url, json=data, timeout=10)
+        except requests.RequestException:
+            st.error("The prediction API could not be reached. Check its URL and startup status.")
+            st.stop()
 
         # Handle response
         if response.status_code == 200:

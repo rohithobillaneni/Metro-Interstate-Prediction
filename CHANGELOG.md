@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Train new local serving bundles with recorded data, code and dependency provenance;
+  require a separately trusted manifest pin before loading executable pickle bytes.
+- Move API artifact loading from import to configured startup. Share validated
+  feature construction with training; derive hour category, reject contradictory
+  requests and avoid reflecting raw input or internal errors.
+- Add artifact-integrity, startup, request-validation and concurrency tests;
+  retain historical models without loading them.
+
 - Add an offline raw-CSV evaluation path with timestamp grouping and fixed
   train/validation/reserved-test boundaries.
 - Correct holiday encoding in the new path and explicitly account for invalid
@@ -12,5 +20,6 @@
 - Formalize the existing MIT code licence and attribute the UCI dataset under
   its separate CC BY4.0 licence.
 
-Legacy serving, database training, model artifacts and stored metrics remain
-unchanged and are not certified by this evaluation milestone.
+Historical database training, saved model artifacts and stored metrics remain
+unchanged and unverified. Local serving now uses the explicit fresh-bundle path
+described above; frontend startup and Docker reproduction remain follow-up work.

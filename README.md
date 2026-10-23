@@ -8,7 +8,7 @@ chronological evaluation using the bundled public UCI dataset.
 
 ```sh
 python3.13 -m venv .venv
-.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-evaluation.txt
+.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-serving.txt
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python -m src.evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output validation-result.json
 ```
@@ -20,8 +20,12 @@ no Cassandra instance, API credentials or saved model. See the
 [dataset attribution](DATASET.md) and [contribution guide](CONTRIBUTING.md).
 This is same-hour estimation using observed weather, not an advance forecast.
 
-**Maturity:** the offline evaluation is under active maintenance. The original
-database, API, frontend and Docker walkthrough below is historical and has known
+For newly trained local inference and API startup, follow the
+[serving instructions](docs/serving.md). The API uses an explicitly trusted
+fresh artifact; it never falls back to the historical pickle model.
+
+**Maturity:** offline evaluation and local API serving are under active maintenance. The original
+database, frontend and Docker walkthrough below is historical and has known
 reproducibility limitations. Its saved models/results are preserved, not newly
 validated. Use the offline commands above; do not rely on the historical setup
 instructions as a verified deployment path.

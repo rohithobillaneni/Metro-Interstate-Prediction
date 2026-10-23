@@ -25,9 +25,24 @@ For this small dataset, records and pandas features are materialized in memory.
 The forest uses one worker, 100 trees, depth at most 12 and a fixed random seed.
 No plugin architecture or service abstraction is needed for this milestone.
 
-The Cassandra ingestion/training scripts, saved pickle models, FastAPI/Streamlit
-serving path and Docker configuration are retained as historical components.
-They have not yet been made reproducible by this change. They are not imported
-by the offline command. In particular, do not load an untrusted pickle: loading
-one can execute code. Future serving work must use a newly generated and
-traceable artifact rather than assume the historical artifacts are compatible.
+The Cassandra ingestion/training scripts, saved pickle models and Docker
+configuration remain historical components. They are not imported by the
+offline command. Streamlit startup and container reproduction remain follow-up
+work.
+
+## Local serving
+
+`src.artifacts` explicitly fits the same pre-2017 model and writes a new local
+bundle with data/code/dependency provenance. `src.app.create_app` reads no
+artifact at import. Its lifespan verifies an independently supplied manifest
+pin and compatible runtime/source before deserializing a trusted local bundle.
+There is no automatic legacy fallback or remote artifact upload. Pickle remains
+executable; the trust boundary is detailed in [serving](serving.md).
+
+Request schemas preserve the existing calendar/weather inputs while constraining
+types, ranges and redundant hour/category consistency. Both CSV-derived training
+records and API inputs call `feature_values` for the same feature representation.
+The synchronous prediction route runs in FastAPI's worker pool. Startup fails
+when configuration or artifact validation fails; unexpected prediction errors
+return a generic 500 response. This is a local reference API, not an authenticated
+public deployment.
