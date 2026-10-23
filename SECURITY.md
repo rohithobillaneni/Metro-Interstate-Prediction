@@ -10,8 +10,10 @@ The historical model files are not loaded or verified. Local API serving now
 requires a newly generated bundle and a separately trusted manifest digest.
 The digest binds model bytes, source and dependencies; it does not make an
 untrusted pickle safe. Read [the trust boundary](docs/serving.md) before use.
-Use loopback binding. Authentication, public deployment, frontend startup and
-the legacy Docker setup remain outside the verified scope.
+Use loopback binding. The supported containers run as non-root users, mount the
+model read-only, drop capabilities and disable Streamlit usage telemetry. These
+controls are not authentication: public deployment remains outside this scope.
+Container base-image digests and dependency locks need deliberate security updates.
 
 Please use the repository's GitHub **Security → Report a vulnerability** option
 when available. If it is unavailable, open an issue requesting a private contact

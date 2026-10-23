@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import os
+import math
 
 from src.offline_data import hour_category as derive_hour_category
 import plotly.graph_objects as go
@@ -37,7 +38,7 @@ st.markdown("""
 
 # Title and Description
 st.markdown("<h1 class='main-title'>🚦 Metro Traffic Volume Prediction</h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub-title'>Utilising machine learning to predict traffic congestion based on weather, time, and other factors.</p>", unsafe_allow_html=True)
+st.markdown("<p class='sub-title'>Estimate same-hour traffic volume using calendar and observed weather.</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 # Sidebar for Inputs
@@ -87,34 +88,40 @@ if predict_button:
             st.error("The prediction API could not be reached. Check its URL and startup status.")
             st.stop()
 
-        # Handle response
-        if response.status_code == 200:
-            prediction = response.json().get("prediction", "Error")
-            
-            # Display Results
-            st.markdown("### 🚗 **Predicted Traffic Volume**")
-            if isinstance(prediction, (int, float)):  
-                st.success(f"🔹 **{int(prediction)} vehicles**")
-
-                # Visualization - Traffic Volume Gauge
-                fig = go.Figure(go.Indicator(
-                    mode="gauge+number",
-                    value=int(prediction),
-                    title={'text': "Traffic Volume"},
-                    gauge={'axis': {'range': [None, 10000]},
-                           'bar': {'color': "#3498db"},
-                           'steps': [
-                               {'range': [0, 3000], 'color': "#2ecc71"},
-                               {'range': [3000, 7000], 'color': "#f1c40f"},
-                               {'range': [7000, 10000], 'color': "#e74c3c"}
-                           ]}
-                ))
-                st.plotly_chart(fig)
-
-            else:
-                st.error("⚠️ Invalid prediction received. Please check the API response.")
-        else:
+        if response.status_code != 200:
             st.error("❌ API request failed. Ensure FastAPI is running.")
+            st.stop()
+        try:
+            result = response.json()
+        except requests.exceptions.JSONDecodeError:
+            st.error("The prediction API returned invalid JSON.")
+            st.stop()
+        prediction = result.get("prediction") if isinstance(result, dict) else None
+        try:
+            valid_prediction = (
+                type(prediction) in (int, float)
+                and math.isfinite(prediction)
+                and prediction >= 0
+            )
+        except OverflowError:
+            valid_prediction = False
+        if not valid_prediction:
+            st.error("⚠️ Invalid prediction received. Expected a finite, nonnegative number.")
+            st.stop()
+
+        st.markdown("### 🚗 **Estimated Hourly Traffic Volume**")
+        st.success(f"🔹 **{prediction:,.0f} vehicles/hour**")
+
+        # Volume does not establish congestion thresholds, so use a neutral scale.
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=prediction,
+            number={'valueformat': ',.0f'},
+            title={'text': "Vehicles/hour"},
+            gauge={'axis': {'range': [0, max(10000, prediction)]},
+                   'bar': {'color': "#3498db"}}
+        ))
+        st.plotly_chart(fig)
 
 # Footer
 st.markdown("""

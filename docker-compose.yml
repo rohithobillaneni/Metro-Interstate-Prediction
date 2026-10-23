@@ -1,30 +1,43 @@
-version: '3.8'
-
 services:
   backend:
+    image: ${COMPOSE_PROJECT_NAME:-metro}-backend:local
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: traffic-backend
+    environment:
+      METRO_MODEL_DIR: /models
+      # Empty configuration fails API startup; there is no legacy fallback.
+      METRO_MODEL_MANIFEST_SHA256: ${METRO_MODEL_MANIFEST_SHA256:-}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${METRO_BACKEND_PORT:-8000}:8000"
     volumes:
-      - ./models:/app/models  # Mount models directory if you need to update models externally
-    networks:
-      - app-network
+      - type: bind
+        source: ${METRO_MODEL_HOST_DIR:-./generated-models/container-v1}
+        target: /models
+        read_only: true
+        bind:
+          create_host_path: false
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
 
   frontend:
+    image: ${COMPOSE_PROJECT_NAME:-metro}-frontend:local
     build:
       context: .
       dockerfile: Dockerfile-frontend
-    container_name: traffic-frontend
+    environment:
+      METRO_API_URL: http://backend:8000/predict
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
     ports:
-      - "8501:8501"
-    networks:
-      - app-network
+      - "127.0.0.1:${METRO_FRONTEND_PORT:-8501}:8501"
     depends_on:
-      - backend
-
-networks:
-  app-network:
-    driver: bridge
+      backend:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
