@@ -1,0 +1,6 @@
+# Keep the proven evaluation environment unchanged.
+-c requirements-evaluation.txt
+-r requirements-evaluation.in
+fastapi==0.143.5
+uvicorn==0.54.0
+httpx==0.28.1

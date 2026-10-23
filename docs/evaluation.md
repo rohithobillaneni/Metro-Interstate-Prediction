@@ -56,7 +56,8 @@ From the repository root, with Python 3.13:
 ```sh
 python3.13 -m venv .venv
 .venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-evaluation.txt
-.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m unittest discover -s tests -p 'test_offline_data.py' -v
+.venv/bin/python -m unittest discover -s tests -p 'test_evaluation.py' -v
 .venv/bin/python -m src.evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output validation-result.json
 ```
 
@@ -65,6 +66,8 @@ pins transitives and verifies downloaded artifact hashes. The legacy broad
 `requirements.txt` and `setup.py` are not used for this path. The command does
 not overwrite old results or any historical artifact. An omitted `--output`
 writes JSON to stdout. Installation needs package access; evaluation is offline.
+For the complete test suite including local API/artifact tests, install
+`requirements-serving.txt` and run `python -m unittest discover -s tests -v`.
 
 ## Limits and historical comparison
 

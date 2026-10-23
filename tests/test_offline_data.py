@@ -5,7 +5,105 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from src.offline_data import encode_holiday, load_csv, partition_records
+from src.offline_data import (
+    TrafficRecord,
+    encode_holiday,
+    feature_values,
+    hour_category,
+    load_csv,
+    partition_records,
+)
+
+
+class FeatureValuesTests(unittest.TestCase):
+    def setUp(self):
+        self.values = {
+            "temp": 12.5,
+            "clouds_all": 40,
+            "weather_main": "Clouds",
+            "holiday": 0,
+            "weekday": 5,
+            "hour": 23,
+            "month": 12,
+        }
+
+    def test_feature_values_preserve_valid_inputs_and_add_hour_category(self):
+        self.assertEqual(feature_values(**self.values), {
+            "temp": 12.5,
+            "clouds_all": 40,
+            "weather_main": "Clouds",
+            "holiday": 0,
+            "weekday": 5,
+            "hour": 23,
+            "month": 12,
+            "hour_category": "Night",
+        })
+        for temp, clouds in ((-273.1499, 0), (0, 100), (20, 12.5)):
+            with self.subTest(temp=temp, clouds=clouds):
+                actual = feature_values(**{**self.values, "temp": temp, "clouds_all": clouds})
+                self.assertEqual(actual["temp"], temp)
+                self.assertEqual(actual["clouds_all"], clouds)
+
+    def test_weather_is_trimmed_and_length_bounded_after_trimming(self):
+        for raw, expected in ((" \tSnow\n", "Snow"), ("x" * 64, "x" * 64)):
+            with self.subTest(raw=raw):
+                actual = feature_values(**{**self.values, "weather_main": raw})
+                self.assertEqual(actual["weather_main"], expected)
+        for value in (None, False, 1, "", " \n\t", "x" * 65):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "weather_main"):
+                    feature_values(**{**self.values, "weather_main": value})
+
+    def test_continuous_features_reject_bool_non_numeric_and_nonfinite_values(self):
+        for name in ("temp", "clouds_all"):
+            for value in (True, False, None, "10", complex(10), float("nan"), float("inf"), float("-inf")):
+                with self.subTest(name=name, value=value):
+                    with self.assertRaisesRegex(ValueError, name):
+                        feature_values(**{**self.values, name: value})
+        with self.assertRaisesRegex(ValueError, "temp"):
+            feature_values(**{**self.values, "temp": 10 ** 1000})
+
+    def test_continuous_features_enforce_physical_ranges(self):
+        for name, values in (("temp", (-273.15, -274)), ("clouds_all", (-0.1, 100.1))):
+            for value in values:
+                with self.subTest(name=name, value=value):
+                    with self.assertRaisesRegex(ValueError, name):
+                        feature_values(**{**self.values, name: value})
+
+    def test_discrete_features_require_exact_ints_in_range(self):
+        ranges = {"holiday": (0, 1), "weekday": (0, 6), "hour": (0, 23), "month": (1, 12)}
+        for name, (minimum, maximum) in ranges.items():
+            for value in (True, False, None, str(minimum), float(minimum), minimum - 1, maximum + 1):
+                with self.subTest(name=name, value=value):
+                    with self.assertRaisesRegex(ValueError, name):
+                        feature_values(**{**self.values, name: value})
+            for value in (minimum, maximum):
+                with self.subTest(name=name, boundary=value):
+                    self.assertEqual(feature_values(**{**self.values, name: value})[name], value)
+
+    def test_public_hour_category_handles_boundaries_and_rejects_invalid_hours(self):
+        expected = {
+            0: "Late Night", 3: "Late Night", 4: "Early Morning", 7: "Early Morning",
+            8: "Morning", 11: "Morning", 12: "Afternoon", 15: "Afternoon",
+            16: "Evening", 19: "Evening", 20: "Night", 23: "Night",
+        }
+        for hour, category in expected.items():
+            with self.subTest(hour=hour):
+                self.assertEqual(hour_category(hour), category)
+        for hour in (True, False, None, "1", 1.0, -1, 24):
+            with self.subTest(hour=hour):
+                with self.assertRaisesRegex(ValueError, "hour"):
+                    hour_category(hour)
+
+    def test_feature_results_are_independent_and_records_share_validation(self):
+        first = feature_values(**self.values)
+        first["weather_main"] = "Rain"
+        self.assertEqual(feature_values(**self.values)["weather_main"], "Clouds")
+        self.assertEqual(self.values["weather_main"], "Clouds")
+        record = TrafficRecord(datetime(2016, 12, 31, 23), 100, 12.5, 40, " Clouds ", 0)
+        self.assertEqual(record.features(), feature_values(**self.values))
+        with self.assertRaisesRegex(ValueError, "holiday"):
+            replace(record, holiday=True).features()
 
 
 class OfflineDataTests(unittest.TestCase):
