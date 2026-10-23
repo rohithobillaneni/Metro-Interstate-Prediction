@@ -1,6 +1,30 @@
 # Metro Traffic Volume Prediction
 
-A complete end-to-end machine learning project to predict hourly traffic volume on a metro interstate. The project covers data ingestion from Cassandra, data preprocessing and transformation, model training and evaluation, a FastAPI backend for predictions, a Streamlit frontend for interactive use, and containerization with Docker.
+A Python project for estimating hourly I-94 traffic volume from calendar and
+observed weather features. The maintained entry point is now an offline,
+chronological evaluation using the bundled public UCI dataset.
+
+## Reproduce the offline evaluation
+
+```sh
+python3.13 -m venv .venv
+.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-evaluation.txt
+.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m src.evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output validation-result.json
+```
+
+This fits on pre-2017 data and compares a seeded forest with mean and calendar
+baselines on 2017. It preserves 2018 as an unscored reserved period. It requires
+no Cassandra instance, API credentials or saved model. See the
+[evaluation protocol](docs/evaluation.md), [architecture](docs/architecture.md),
+[dataset attribution](DATASET.md) and [contribution guide](CONTRIBUTING.md).
+This is same-hour estimation using observed weather, not an advance forecast.
+
+**Maturity:** the offline evaluation is under active maintenance. The original
+database, API, frontend and Docker walkthrough below is historical and has known
+reproducibility limitations. Its saved models/results are preserved, not newly
+validated. Use the offline commands above; do not rely on the historical setup
+instructions as a verified deployment path.
 
 # Front-End
 

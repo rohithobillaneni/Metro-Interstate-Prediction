@@ -1,0 +1,40 @@
+name: Offline evaluation
+
+on:
+  push:
+    branches: [main, fix/reproducible-temporal-evaluation]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Install locked evaluation dependencies
+        run: |
+          python -m pip install --only-binary=:all: --require-hashes -r requirements-evaluation.txt
+      - name: Behavioural tests
+        run: python -m unittest discover -s tests -v
+      - name: Reproduce raw-data evaluation
+        run: python -m src.evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output validation-result.json
+      - name: Check fixed dataset and cohort
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          actual = json.loads(Path('validation-result.json').read_text())
+          reference = json.loads(Path('benchmarks/validation-2017.json').read_text())
+          for key in ('source_sha256', 'cleaning', 'split', 'model_parameters', 'weekday_hour_fallback_count'):
+              assert actual[key] == reference[key], key
+          assert set(actual['metrics']) == set(reference['metrics'])
+          # Floating-point digests/metrics need not be identical across platforms.
+          PY
