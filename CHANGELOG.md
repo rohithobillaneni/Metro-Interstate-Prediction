@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add fixed expanding-window development validation, exact seven-calendar-day
+  seasonal baselines, same-cohort predictions and pooled/paired metrics.
+- Exclude reserved 2018 values before validation in the new development loader;
+  preserve the original loader and report semantics. Add leakage/temporal tests.
+- Loader source changes require regenerating local serving bundles; existing
+  source-integrity checks continue to reject mismatched bundles.
+
 - Handle malformed JSON, invalid prediction values and network failures in the
   frontend; derive requests from the shared feature contract and report volume
   without unsupported congestion thresholds.

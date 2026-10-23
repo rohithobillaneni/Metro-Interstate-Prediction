@@ -85,3 +85,7 @@ must remain reserved until a final protocol is frozen. A later protocol should
 include rolling-origin validation and exact-time seasonal lag baselines with
 explicit missing-hour/feature-availability rules. Do not use row shifts as a
 substitute for elapsed time in this irregular series.
+
+The separate [M2 temporal experiment](temporal-evaluation.md) implements four
+fixed development windows and exact-time seasonal baselines. It does not alter
+this original protocol/report or score 2018.

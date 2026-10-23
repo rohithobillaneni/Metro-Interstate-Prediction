@@ -35,3 +35,7 @@ The result uses one fixed split and single seeded fit, with no uncertainty
 interval. Future rolling-origin evaluation and availability-aware seasonal
 baselines remain necessary before stronger forecasting or generalization
 claims. Preserve these results, including the unfavorable months.
+
+A separate [four-window M2 development comparison](temporal-development-2017.md)
+now records exact-time seasonal baselines and expanding training. Its cohort
+differs from this original report; the scores are not a before/after comparison.

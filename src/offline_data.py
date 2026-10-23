@@ -3,7 +3,7 @@
 The source timestamps are naive local clock times. No timezone or forecast
 horizon is inferred. Duplicate weather observations are reduced to the first
 valid-temperature source row per timestamp, after checking target agreement
-across *all* rows. No distribution-derived filtering is applied.
+across all included rows. No distribution-derived filtering is applied.
 """
 
 import csv
@@ -119,6 +119,11 @@ class LoadDiagnostics:
 
 
 @dataclass(frozen=True)
+class DevelopmentLoadDiagnostics(LoadDiagnostics):
+    reserved_rows_excluded: int
+
+
+@dataclass(frozen=True)
 class TemporalPartitions:
     train: tuple[TrafficRecord, ...]
     validation: tuple[TrafficRecord, ...]
@@ -143,9 +148,39 @@ def load_csv(path: str | Path) -> tuple[tuple[TrafficRecord, ...], LoadDiagnosti
     ``duplicate_extras`` counts valid-temperature rows removed by deduplication,
     so raw_count == invalid_temp_dropped + duplicate_extras + distinct_timestamps.
     """
+    records, diagnostics, _ = _load_csv(path)
+    return records, diagnostics
+
+
+def load_development_csv(
+    path: str | Path,
+) -> tuple[tuple[TrafficRecord, ...], DevelopmentLoadDiagnostics]:
+    """Load only timestamps before 2018 without validating reserved values.
+
+    Header, row shape and timestamp parsing still apply to every CSV row. Rows
+    at or after 2018-01-01 are then excluded before target or feature validation,
+    duplicate-target checks or record construction. Their malformed targets and
+    feature values cannot affect development records or cleaning decisions.
+
+    Counts include all source rows: raw_count == reserved_rows_excluded +
+    invalid_temp_dropped + duplicate_extras + distinct_timestamps.
+    """
+    records, diagnostics, excluded = _load_csv(path, exclude_from=datetime(2018, 1, 1))
+    return records, DevelopmentLoadDiagnostics(
+        raw_count=diagnostics.raw_count,
+        invalid_temp_dropped=diagnostics.invalid_temp_dropped,
+        duplicate_extras=diagnostics.duplicate_extras,
+        distinct_timestamps=diagnostics.distinct_timestamps,
+        reserved_rows_excluded=excluded,
+    )
+
+
+def _load_csv(
+    path: str | Path, *, exclude_from: datetime | None = None,
+) -> tuple[tuple[TrafficRecord, ...], LoadDiagnostics, int]:
     records: dict[datetime, TrafficRecord] = {}
     targets: dict[datetime, float] = {}
-    raw_count = invalid_temp_dropped = duplicate_extras = 0
+    raw_count = invalid_temp_dropped = duplicate_extras = reserved_rows_excluded = 0
     with Path(path).open(encoding="utf-8", newline="") as source:
         reader = csv.DictReader(source)
         columns = reader.fieldnames
@@ -167,6 +202,9 @@ def load_csv(path: str | Path) -> tuple[tuple[TrafficRecord, ...], LoadDiagnosti
                 raise ValueError(
                     f"CSV line {line_number}: date_time must be YYYY-MM-DD HH:MM:SS"
                 ) from exc
+            if exclude_from is not None and date_time >= exclude_from:
+                reserved_rows_excluded += 1
+                continue
             target = _finite_number(row["traffic_volume"], "traffic_volume", line_number)
             if target < 0:
                 raise ValueError(f"CSV line {line_number}: traffic_volume must be nonnegative")
@@ -201,7 +239,7 @@ def load_csv(path: str | Path) -> tuple[tuple[TrafficRecord, ...], LoadDiagnosti
         raise ValueError("CSV contains no usable records")
     return ordered, LoadDiagnostics(
         raw_count, invalid_temp_dropped, duplicate_extras, len(ordered)
-    )
+    ), reserved_rows_excluded
 
 
 def _cutoff(value: str) -> datetime:
