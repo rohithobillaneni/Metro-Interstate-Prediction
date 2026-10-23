@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Handle malformed JSON, invalid prediction values and network failures in the
+  frontend; derive requests from the shared feature contract and report volume
+  without unsupported congestion thresholds.
+- Reproduce frontend sessions with AppTest and lock its dependencies separately.
+- Build non-root Python3.13 containers with explicit model trust, read-only
+  mounts, loopback ports and backend readiness; exercise a newly trained model
+  and real frontend/API session in container CI.
+
 - Train new local serving bundles with recorded data, code and dependency provenance;
   require a separately trusted manifest pin before loading executable pickle bytes.
 - Move API artifact loading from import to configured startup. Share validated
@@ -22,4 +30,5 @@
 
 Historical database training, saved model artifacts and stored metrics remain
 unchanged and unverified. Local serving now uses the explicit fresh-bundle path
-described above; frontend startup and Docker reproduction remain follow-up work.
+described above. The maintained container path trains a fresh bundle in its
+backend image; historical models are never substituted.

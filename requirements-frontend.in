@@ -1,0 +1,5 @@
+# Frontend only; retain reviewed versions wherever serving dependencies overlap.
+-c requirements-serving.txt
+streamlit==1.66.1
+requests==2.34.2
+plotly==7.1.0

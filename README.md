@@ -8,7 +8,7 @@ chronological evaluation using the bundled public UCI dataset.
 
 ```sh
 python3.13 -m venv .venv
-.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-serving.txt
+.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-serving.txt -r requirements-frontend.txt
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python -m src.evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output validation-result.json
 ```
@@ -24,11 +24,15 @@ For newly trained local inference and API startup, follow the
 [serving instructions](docs/serving.md). The API uses an explicitly trusted
 fresh artifact; it never falls back to the historical pickle model.
 
-**Maturity:** offline evaluation and local API serving are under active maintenance. The original
-database, frontend and Docker walkthrough below is historical and has known
-reproducibility limitations. Its saved models/results are preserved, not newly
-validated. Use the offline commands above; do not rely on the historical setup
-instructions as a verified deployment path.
+**Maturity:** offline evaluation, local API serving and the frontend have a maintained
+reproduction path. See [local serving](docs/serving.md) and
+[container reproduction](docs/containers.md). This remains a reference project,
+not an authenticated public service. Historical models and stored results remain
+preserved and unverified.
+
+The original walkthrough below records the earlier implementation. Use the
+maintained commands above and linked guides; the historical Cassandra/model
+selection and deployment instructions are not the supported reproduction path.
 
 # Front-End
 

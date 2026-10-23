@@ -25,10 +25,11 @@ For this small dataset, records and pandas features are materialized in memory.
 The forest uses one worker, 100 trees, depth at most 12 and a fixed random seed.
 No plugin architecture or service abstraction is needed for this milestone.
 
-The Cassandra ingestion/training scripts, saved pickle models and Docker
-configuration remain historical components. They are not imported by the
-offline command. Streamlit startup and container reproduction remain follow-up
-work.
+The historical Cassandra ingestion/training scripts and saved pickle models
+remain in the checkout and are not imported by the offline command. The original
+Docker configuration is preserved in Git history. The maintained container path
+uses separate locked frontend/backend environments and a fresh trusted bundle;
+see [container reproduction](containers.md).
 
 ## Local serving
 

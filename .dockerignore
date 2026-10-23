@@ -1,6 +1,10 @@
-__pycache__/
-*.pyc
-*.pyo
-*.pkl
-.env
-.git/
+# Allow only files used by the two images. No data, models, credentials or venvs.
+**
+!Dockerfile
+!Dockerfile-frontend
+!requirements-serving.txt
+!requirements-frontend.txt
+!frontend.py
+!LICENSE
+!src/
+!src/*.py

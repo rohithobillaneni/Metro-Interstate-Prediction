@@ -67,7 +67,7 @@ pins transitives and verifies downloaded artifact hashes. The legacy broad
 not overwrite old results or any historical artifact. An omitted `--output`
 writes JSON to stdout. Installation needs package access; evaluation is offline.
 For the complete test suite including local API/artifact tests, install
-`requirements-serving.txt` and run `python -m unittest discover -s tests -v`.
+`requirements-serving.txt` plus `requirements-frontend.txt` and run `python -m unittest discover -s tests -v`.
 
 ## Limits and historical comparison
 

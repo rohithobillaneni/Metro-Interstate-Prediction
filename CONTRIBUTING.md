@@ -1,7 +1,7 @@
 # Contributing
 
 For evaluation changes, read [the protocol](docs/evaluation.md), install
-`requirements-serving.txt` in Python 3.13, and run
+`requirements-serving.txt` and `requirements-frontend.txt` in Python 3.13, and run
 `python -m unittest discover -s tests -v` from the repository root.
 Keep tests offline and use synthetic fixtures for edge cases.
 

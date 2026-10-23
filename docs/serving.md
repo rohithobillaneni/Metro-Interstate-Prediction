@@ -27,7 +27,7 @@ From the repository root, with Python 3.13:
 
 ```sh
 python3.13 -m venv .venv
-.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-serving.txt
+.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-serving.txt -r requirements-frontend.txt
 .venv/bin/python -m unittest discover -s tests -v
 mkdir -p generated-models
 .venv/bin/python -m src.artifacts --data data/Metro_Interstate_Traffic_Volume.csv --output generated-models/pre2017-v1
@@ -74,11 +74,25 @@ preserved. Invalid request responses do not echo raw input. Unexpected predictio
 failures return a generic 500 message. Prediction runs outside the async event
 loop through a synchronous route; this is not a throughput benchmark.
 
-The frontend now derives its hour category and accepts `METRO_API_URL` (default
-`http://127.0.0.1:8000/predict`) with a 10-second timeout. Frontend dependencies,
-startup and container deployment remain separate follow-up work. The old Docker
-images still use Python 3.9 and are **not supported by these local instructions**.
-Do not run the old Docker walkthrough as a verified deployment recipe.
+## Start the frontend locally
+
+Keep the API running. In another terminal using the same environment:
+
+```sh
+export METRO_API_URL=http://127.0.0.1:8000/predict
+.venv/bin/python -m streamlit run frontend.py --server.address=127.0.0.1 --server.headless=true --browser.gatherUsageStats=false
+```
+
+Open `http://127.0.0.1:8501`. The frontend derives its hour category, uses a
+10-second request timeout and handles network, HTTP, malformed-JSON and invalid
+prediction responses without showing internal details. It reports vehicles/hour,
+not congestion severity. Local AppTest checks execute the session and a live API
+smoke checks interoperability; these do not establish browser visual coverage.
+
+For reproducible container builds and local Compose startup, follow
+[the container instructions](containers.md). Models must be trained with the
+same backend image used for serving; do not substitute an old host artifact.
+Both supported images now use Python3.13 and separate locked dependencies.
 
 API tests use newly trained synthetic bundles, request-boundary failures and
 concurrent requests. They never load the historical model files. HTTPX 0.28.1 is
