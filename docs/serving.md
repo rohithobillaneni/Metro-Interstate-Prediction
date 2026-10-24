@@ -46,6 +46,14 @@ not used to fit the model. The manifest records dataset hash, row accounting,
 training timestamps, model configuration, environment and source hashes. This
 is a reproducible reference model, not a claim of operational forecasting value.
 
+Training snapshots the CSV digest, prediction-source hashes, dependency metadata
+and model parameters before loading/fitting, then checks them again after model
+serialization. Detected changes abort before creating the bundle directory or
+returning a pin. Run training in a fresh process with a stable checkout, dataset
+and environment. These boundary checks detect persistent drift; they do not
+prove that on-disk source matches already imported code, attest dependency
+binaries, or prevent a change that is reverted between checks.
+
 ## Start and query
 
 ```sh

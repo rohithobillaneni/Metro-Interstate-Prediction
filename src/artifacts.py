@@ -55,6 +55,9 @@ def train_bundle(source: str | Path, directory: str | Path) -> str:
     if directory.exists():
         raise ValueError("Bundle directory already exists; previous artifacts are never replaced")
     source_digest = _digest(source.read_bytes())
+    source_hashes = _source_hashes()
+    environment = _environment()
+    model_parameters = MODEL_PARAMETERS.copy()
     records, diagnostics = load_csv(source)
     if _digest(source.read_bytes()) != source_digest:
         raise ValueError("Source CSV changed while loading")
@@ -67,6 +70,16 @@ def train_bundle(source: str | Path, directory: str | Path) -> str:
     payload = pickle.dumps(model, protocol=5)
     if len(payload) > MAX_MODEL_BYTES:
         raise ValueError("Model exceeds the supported bundle size")
+    # Bind the manifest to the pre-training snapshot, not metadata first read
+    # after fitting. These drift checks are not loaded-code attestation.
+    if _digest(source.read_bytes()) != source_digest:
+        raise ValueError("Source CSV changed while training")
+    if _source_hashes() != source_hashes:
+        raise ValueError("Prediction source changed while training")
+    if _environment() != environment:
+        raise ValueError("Python/dependency metadata changed while training")
+    if MODEL_PARAMETERS != model_parameters:
+        raise ValueError("Model parameters changed while training")
     manifest = {
         "schema_version": 1,
         "format": "trusted-local-sklearn-pickle",
@@ -82,9 +95,9 @@ def train_bundle(source: str | Path, directory: str | Path) -> str:
             "reserved_test_used_for_fit": False,
         },
         "source_cleaning": asdict(diagnostics),
-        "model_parameters": MODEL_PARAMETERS.copy(),
-        "prediction_source_sha256": _source_hashes(),
-        "environment": _environment(),
+        "model_parameters": model_parameters,
+        "prediction_source_sha256": source_hashes,
+        "environment": environment,
     }
     encoded = (json.dumps(manifest, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
     # Exclusive directory creation prevents replacement, including by racing runs.

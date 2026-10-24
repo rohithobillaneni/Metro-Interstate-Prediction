@@ -1,6 +1,8 @@
 import contextlib
+import copy
 import csv
 import hashlib
+import io
 from importlib.metadata import version
 import json
 from pathlib import Path
@@ -309,6 +311,125 @@ class ArtifactTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Model exceeds"):
                 artifacts.train_bundle(self.source, destination)
         self.assertFalse(destination.exists())
+
+    def test_training_rejects_provenance_changes_during_fit_or_serialization(self):
+        for stage in ("fit", "serialization"):
+            for field in ("source", "environment", "parameters"):
+                with self.subTest(stage=stage, field=field), contextlib.ExitStack() as stack:
+                    destination = self.root / f"drift-{stage}-{field}"
+                    source_hashes = artifacts._source_hashes()
+                    environment = artifacts._environment()
+                    stack.enter_context(patch(
+                        "src.artifacts._source_hashes", side_effect=lambda: dict(source_hashes)
+                    ))
+                    stack.enter_context(patch(
+                        "src.artifacts._environment", side_effect=lambda: copy.deepcopy(environment)
+                    ))
+                    stack.enter_context(patch.dict(artifacts.MODEL_PARAMETERS))
+
+                    def mutate():
+                        if field == "source":
+                            source_hashes["offline_data.py"] = "0" * 64
+                        elif field == "environment":
+                            environment["dependencies"]["numpy"] = "changed-during-training"
+                        else:
+                            artifacts.MODEL_PARAMETERS["max_depth"] += 1
+
+                    model = make_model()
+                    original = Pipeline.fit if stage == "fit" else pickle.dumps
+
+                    def change_after_work(*args, **kwargs):
+                        result = original(*args, **kwargs)
+                        mutate()
+                        return result
+
+                    stack.enter_context(patch("src.artifacts.make_model", return_value=model))
+                    if stage == "fit":
+                        stack.enter_context(patch.object(Pipeline, "fit", new=change_after_work))
+                    else:
+                        stack.enter_context(patch("src.artifacts.pickle.dumps", side_effect=change_after_work))
+                    with self.assertRaisesRegex(ValueError, "changed while training"):
+                        artifacts.train_bundle(self.source, destination)
+                    self.assertFalse(destination.exists())
+
+    def test_training_rejects_csv_changes_during_loading_or_fitting(self):
+        for stage in ("loading", "fitting"):
+            with self.subTest(stage=stage), contextlib.ExitStack() as stack:
+                source = self.root / f"drifting-{stage}.csv"
+                write_csv(source, self.rows)
+                destination = self.root / f"drifting-{stage}"
+                model = make_model()
+                original = load_csv if stage == "loading" else Pipeline.fit
+
+                def change_after_read(*args, **kwargs):
+                    result = original(*args, **kwargs)
+                    source.write_bytes(source.read_bytes() + b"\n")
+                    return result
+
+                stack.enter_context(patch("src.artifacts.make_model", return_value=model))
+                if stage == "loading":
+                    stack.enter_context(patch("src.artifacts.load_csv", side_effect=change_after_read))
+                else:
+                    stack.enter_context(patch.object(Pipeline, "fit", new=change_after_read))
+                with self.assertRaisesRegex(ValueError, "Source CSV changed while"):
+                    artifacts.train_bundle(source, destination)
+                self.assertFalse(destination.exists())
+
+    def test_fit_and_serialization_failures_do_not_create_a_bundle(self):
+        for stage in ("fit", "serialization"):
+            with self.subTest(stage=stage), contextlib.ExitStack() as stack:
+                destination = self.root / f"failed-{stage}"
+                model = make_model()
+                failure = ValueError(f"injected {stage} failure")
+                stack.enter_context(patch("src.artifacts.make_model", return_value=model))
+                if stage == "fit":
+                    stack.enter_context(patch.object(model, "fit", side_effect=failure))
+                else:
+                    stack.enter_context(patch("src.artifacts.pickle.dumps", side_effect=failure))
+                with self.assertRaises(ValueError) as raised:
+                    artifacts.train_bundle(self.source, destination)
+                self.assertIs(raised.exception, failure)
+                self.assertFalse(destination.exists())
+
+    def test_destination_created_during_fit_is_not_overwritten(self):
+        destination = self.root / "racing-destination"
+        model = make_model()
+        original_fit = Pipeline.fit
+
+        def create_destination(*args, **kwargs):
+            result = original_fit(*args, **kwargs)
+            destination.mkdir()
+            (destination / "sentinel").write_bytes(b"another writer")
+            return result
+
+        with patch("src.artifacts.make_model", return_value=model):
+            with patch.object(Pipeline, "fit", new=create_destination):
+                with self.assertRaises(FileExistsError):
+                    artifacts.train_bundle(self.source, destination)
+        self.assertEqual({p.name: p.read_bytes() for p in destination.iterdir()},
+                         {"sentinel": b"another writer"})
+
+    def test_cli_manifest_write_failure_returns_no_pin_and_partial_bundle_fails_closed(self):
+        destination = self.root / "failed-write"
+        original_open = Path.open
+
+        def fail_manifest_open(path, *args, **kwargs):
+            if path == destination / "manifest.json":
+                raise OSError("injected disk failure")
+            return original_open(path, *args, **kwargs)
+
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(Path, "open", fail_manifest_open):
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as raised:
+                    artifacts.main(["--data", str(self.source), "--output", str(destination)])
+        self.assertEqual(raised.exception.code, 2)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("injected disk failure", stderr.getvalue())
+        self.assertEqual({p.name for p in destination.iterdir()}, {"model.pkl"})
+        self.assert_rejected_before_unpickling(directory=destination, message="manifest.json")
+        self.assertEqual((self.bundle / "manifest.json").read_bytes(), self.original_manifest)
+        self.assertEqual((self.bundle / "model.pkl").read_bytes(), self.original_payload)
 
     def test_missing_bundle_and_partial_directories_fail_before_deserialization(self):
         self.assert_rejected_before_unpickling(directory=self.root / "missing")

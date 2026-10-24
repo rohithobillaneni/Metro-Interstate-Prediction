@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Reject detected data, prediction-source, dependency-metadata or model-parameter
+  changes during local bundle training before creating output. Record the initial
+  provenance snapshot and test training, serialization and output failure paths.
+
 - Add a predeclared paired first/last weather-row sensitivity experiment across
   every retained 2017 hour, with 53 fixed expanding-origin folds, quarterly
   diagnostics and raw predictions. Preserve the first-row default, historical
