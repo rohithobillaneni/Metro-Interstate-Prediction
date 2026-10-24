@@ -208,16 +208,24 @@ def evaluate_folds(folds: tuple[Fold, ...]) -> tuple[list[dict], list[float], di
     return fold_reports, pooled_actual, pooled_predictions
 
 
-def evaluate(path: str | Path) -> dict:
-    """Fit each fixed fold independently and retain every prediction and comparison."""
-    path = Path(path)
-    source_hash = _digest(path.read_bytes())
-    code_hashes = _source_hashes()
-    records, diagnostics = load_development_csv(path)
-    if _digest(path.read_bytes()) != source_hash:
-        raise ValueError("Input CSV changed while loading")
-    folds = temporal_folds(records)
-    protocol = {
+def _runtime_metadata() -> dict:
+    """Capture the on-disk lock and installed-version metadata for this run."""
+    return {
+        "evaluation_lock_sha256": _digest((ROOT / "requirements-evaluation.txt").read_bytes()),
+        "environment": {
+            "python": platform.python_version(),
+            "system": platform.system(),
+            "machine": platform.machine(),
+            "dependencies": {
+                name: version(name)
+                for name in ("numpy", "pandas", "scikit-learn", "scipy", "joblib", "threadpoolctl")
+            },
+        },
+    }
+
+
+def _protocol() -> dict:
+    return {
         "id": "metro-temporal-development-v1",
         "task": "retrospective same-hour traffic estimation with observed weather; not advance forecasting",
         "windows": [{"start": start, "end_exclusive": end} for start, end in DEVELOPMENT_WINDOWS],
@@ -232,9 +240,24 @@ def evaluate(path: str | Path) -> dict:
         "model_parameters": MODEL_PARAMETERS.copy(),
         "limitations": "four development weeks, not annual performance; no significance or operational availability claim",
     }
+
+
+def evaluate(path: str | Path) -> dict:
+    """Fit each fixed fold independently and retain every prediction and comparison."""
+    path = Path(path)
+    source_hash = _digest(path.read_bytes())
+    code_hashes = _source_hashes()
+    metadata = _runtime_metadata()
+    protocol = _protocol()
+    records, diagnostics = load_development_csv(path)
+    if _digest(path.read_bytes()) != source_hash:
+        raise ValueError("Input CSV changed while loading")
+    folds = temporal_folds(records)
     fold_reports, pooled_actual, pooled_predictions = evaluate_folds(folds)
     if _digest(path.read_bytes()) != source_hash or _source_hashes() != code_hashes:
         raise ValueError("Input CSV or implementation changed during evaluation")
+    if _runtime_metadata() != metadata or _protocol() != protocol:
+        raise ValueError("Runtime metadata, dependency lock or protocol changed during evaluation")
     pooled = _scores(pooled_actual, pooled_predictions)
     return {
         "schema_version": 1,
@@ -242,21 +265,13 @@ def evaluate(path: str | Path) -> dict:
         "protocol_sha256": _digest(json.dumps(protocol, sort_keys=True, separators=(",", ":")).encode()),
         "source_sha256": source_hash,
         "source_code_sha256": code_hashes,
-        "evaluation_lock_sha256": _digest((ROOT / "requirements-evaluation.txt").read_bytes()),
+        "evaluation_lock_sha256": metadata["evaluation_lock_sha256"],
         "cleaning": asdict(diagnostics),
         "folds": fold_reports,
         "pooled_count": len(pooled_actual),
         "pooled_metrics": pooled,
         "paired_mae_differences": _paired(pooled),
-        "environment": {
-            "python": platform.python_version(),
-            "system": platform.system(),
-            "machine": platform.machine(),
-            "dependencies": {
-                name: version(name)
-                for name in ("numpy", "pandas", "scikit-learn", "scipy", "joblib", "threadpoolctl")
-            },
-        },
+        "environment": metadata["environment"],
     }
 
 

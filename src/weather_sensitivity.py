@@ -3,16 +3,14 @@
 import argparse
 from dataclasses import asdict
 from datetime import datetime, timedelta
-from importlib.metadata import version
 import json
 from pathlib import Path
-import platform
 import sys
 
 from src.evaluation import MODEL_PARAMETERS
 from src.offline_data import TrafficRecord, load_development_csv
 from src.temporal_evaluation import (
-    BASELINES, ROOT, _coverage, _digest, _paired, _scores, _source_hashes,
+    BASELINES, ROOT, _coverage, _digest, _paired, _runtime_metadata, _scores, _source_hashes,
     evaluate_folds, folds_for_windows,
 )
 
@@ -105,6 +103,7 @@ def source_hashes() -> dict:
 def evaluate(path: str | Path) -> dict:
     path = Path(path)
     source_hash, code_hashes = _digest(path.read_bytes()), source_hashes()
+    metadata = _runtime_metadata()
     declared = protocol()
     protocol_bytes = PROTOCOL_PATH.read_bytes()
     if json.loads(protocol_bytes) != declared:
@@ -134,6 +133,8 @@ def evaluate(path: str | Path) -> dict:
     if (_digest(path.read_bytes()) != source_hash or source_hashes() != code_hashes
             or PROTOCOL_PATH.read_bytes() != protocol_bytes):
         raise ValueError("Input CSV, protocol or implementation changed during evaluation")
+    if _runtime_metadata() != metadata or protocol() != declared:
+        raise ValueError("Runtime metadata, dependency lock or protocol changed during evaluation")
     return {
         "schema_version": 1,
         "protocol": declared,
@@ -141,17 +142,12 @@ def evaluate(path: str | Path) -> dict:
         "protocol_file_sha256": _digest(protocol_bytes),
         "source_sha256": source_hash,
         "source_code_sha256": code_hashes,
-        "evaluation_lock_sha256": _digest((ROOT / "requirements-evaluation.txt").read_bytes()),
+        "evaluation_lock_sha256": metadata["evaluation_lock_sha256"],
         "cleaning": asdict(loaded["first"][1]),
         "feature_changes": changes,
         "policies": policy_reports,
         "last_minus_first_metrics": difference,
-        "environment": {
-            "python": platform.python_version(), "system": platform.system(), "machine": platform.machine(),
-            "dependencies": {name: version(name) for name in (
-                "numpy", "pandas", "scikit-learn", "scipy", "joblib", "threadpoolctl",
-            )},
-        },
+        "environment": metadata["environment"],
     }
 
 

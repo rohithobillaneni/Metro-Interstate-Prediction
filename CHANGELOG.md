@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Reject detected dependency-lock, runtime-metadata and protocol changes during
+  temporal/weather evaluation. Preserve initial provenance, historical reports
+  and numerical protocols; test report failure and competing-output boundaries.
+
 - Reject detected data, prediction-source, dependency-metadata or model-parameter
   changes during local bundle training before creating output. Record the initial
   provenance snapshot and test training, serialization and output failure paths.
