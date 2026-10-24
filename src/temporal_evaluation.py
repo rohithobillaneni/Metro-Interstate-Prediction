@@ -49,10 +49,27 @@ def _check_timestamps(records: tuple[TrafficRecord, ...]) -> None:
 
 def temporal_folds(records: Iterable[TrafficRecord]) -> tuple[Fold, ...]:
     """Use four fixed seven-day windows with strictly earlier expanding training."""
+    return folds_for_windows(records, DEVELOPMENT_WINDOWS)
+
+
+def folds_for_windows(
+    records: Iterable[TrafficRecord], windows: tuple[tuple[str, str], ...],
+) -> tuple[Fold, ...]:
+    """Construct declared folds; reject invalid records and empty partitions."""
     supplied = tuple(records)
     _check_timestamps(supplied)
     folds = []
-    for start, end in DEVELOPMENT_WINDOWS:
+    previous_end = None
+    for start, end in windows:
+        start_time, end_time = datetime.fromisoformat(start), datetime.fromisoformat(end)
+        if (start_time.tzinfo is not None or end_time.tzinfo is not None
+                or start_time.minute or start_time.second or start_time.microsecond
+                or end_time.minute or end_time.second or end_time.microsecond
+                or not timedelta(0) < end_time - start_time <= timedelta(days=7)
+                or end_time > datetime(2018, 1, 1)
+                or (previous_end is not None and start_time < previous_end)):
+            raise ValueError("Windows must be ordered, disjoint, whole-hour, pre-2018 and at most seven days")
+        previous_end = end_time
         partitions = partition_records(supplied, start, end)
         folds.append(Fold(
             datetime.fromisoformat(start), datetime.fromisoformat(end),
@@ -143,30 +160,8 @@ def _source_hashes() -> dict[str, str]:
     }
 
 
-def evaluate(path: str | Path) -> dict:
-    """Fit each fixed fold independently and retain every prediction and comparison."""
-    path = Path(path)
-    source_hash = _digest(path.read_bytes())
-    code_hashes = _source_hashes()
-    records, diagnostics = load_development_csv(path)
-    if _digest(path.read_bytes()) != source_hash:
-        raise ValueError("Input CSV changed while loading")
-    folds = temporal_folds(records)
-    protocol = {
-        "id": "metro-temporal-development-v1",
-        "task": "retrospective same-hour traffic estimation with observed weather; not advance forecasting",
-        "windows": [{"start": start, "end_exclusive": end} for start, end in DEVELOPMENT_WINDOWS],
-        "training": "all retained timestamps strictly before each validation start",
-        "reserved_start": "2018-01-01",
-        "reserved_targets_validated": False,
-        "reserved_scored": False,
-        "timestamp_semantics": "naive local clock; whole-hour grid; no timezone or DST inference",
-        "seasonal_lag": "exact same-clock-time seven calendar days earlier from training only",
-        "seasonal_fallback": "training weekday/hour mean, then training global mean",
-        "paired_mae_sign": "random_forest minus baseline; negative favors forest on the same cohort",
-        "model_parameters": MODEL_PARAMETERS.copy(),
-        "limitations": "four development weeks, not annual performance; no significance or operational availability claim",
-    }
+def evaluate_folds(folds: tuple[Fold, ...]) -> tuple[list[dict], list[float], dict[str, list[float]]]:
+    """Fit a fresh pipeline per fold and retain same-cohort baseline predictions."""
     fold_reports = []
     pooled_actual: list[float] = []
     pooled_predictions: dict[str, list[float]] = {name: [] for name in (*BASELINES, "random_forest")}
@@ -210,6 +205,34 @@ def evaluate(path: str | Path) -> dict:
         pooled_actual.extend(actual)
         for name, values in predictions.items():
             pooled_predictions[name].extend(values)
+    return fold_reports, pooled_actual, pooled_predictions
+
+
+def evaluate(path: str | Path) -> dict:
+    """Fit each fixed fold independently and retain every prediction and comparison."""
+    path = Path(path)
+    source_hash = _digest(path.read_bytes())
+    code_hashes = _source_hashes()
+    records, diagnostics = load_development_csv(path)
+    if _digest(path.read_bytes()) != source_hash:
+        raise ValueError("Input CSV changed while loading")
+    folds = temporal_folds(records)
+    protocol = {
+        "id": "metro-temporal-development-v1",
+        "task": "retrospective same-hour traffic estimation with observed weather; not advance forecasting",
+        "windows": [{"start": start, "end_exclusive": end} for start, end in DEVELOPMENT_WINDOWS],
+        "training": "all retained timestamps strictly before each validation start",
+        "reserved_start": "2018-01-01",
+        "reserved_targets_validated": False,
+        "reserved_scored": False,
+        "timestamp_semantics": "naive local clock; whole-hour grid; no timezone or DST inference",
+        "seasonal_lag": "exact same-clock-time seven calendar days earlier from training only",
+        "seasonal_fallback": "training weekday/hour mean, then training global mean",
+        "paired_mae_sign": "random_forest minus baseline; negative favors forest on the same cohort",
+        "model_parameters": MODEL_PARAMETERS.copy(),
+        "limitations": "four development weeks, not annual performance; no significance or operational availability claim",
+    }
+    fold_reports, pooled_actual, pooled_predictions = evaluate_folds(folds)
     if _digest(path.read_bytes()) != source_hash or _source_hashes() != code_hashes:
         raise ValueError("Input CSV or implementation changed during evaluation")
     pooled = _scores(pooled_actual, pooled_predictions)

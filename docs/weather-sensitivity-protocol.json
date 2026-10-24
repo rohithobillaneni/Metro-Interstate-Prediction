@@ -1,0 +1,246 @@
+{
+  "id": "metro-weather-row-2017-v1",
+  "task": "retrospective same-hour traffic estimation using observed weather; not advance forecasting",
+  "windows": [
+    {
+      "start": "2017-01-01T00:00:00",
+      "end_exclusive": "2017-01-08T00:00:00"
+    },
+    {
+      "start": "2017-01-08T00:00:00",
+      "end_exclusive": "2017-01-15T00:00:00"
+    },
+    {
+      "start": "2017-01-15T00:00:00",
+      "end_exclusive": "2017-01-22T00:00:00"
+    },
+    {
+      "start": "2017-01-22T00:00:00",
+      "end_exclusive": "2017-01-29T00:00:00"
+    },
+    {
+      "start": "2017-01-29T00:00:00",
+      "end_exclusive": "2017-02-05T00:00:00"
+    },
+    {
+      "start": "2017-02-05T00:00:00",
+      "end_exclusive": "2017-02-12T00:00:00"
+    },
+    {
+      "start": "2017-02-12T00:00:00",
+      "end_exclusive": "2017-02-19T00:00:00"
+    },
+    {
+      "start": "2017-02-19T00:00:00",
+      "end_exclusive": "2017-02-26T00:00:00"
+    },
+    {
+      "start": "2017-02-26T00:00:00",
+      "end_exclusive": "2017-03-05T00:00:00"
+    },
+    {
+      "start": "2017-03-05T00:00:00",
+      "end_exclusive": "2017-03-12T00:00:00"
+    },
+    {
+      "start": "2017-03-12T00:00:00",
+      "end_exclusive": "2017-03-19T00:00:00"
+    },
+    {
+      "start": "2017-03-19T00:00:00",
+      "end_exclusive": "2017-03-26T00:00:00"
+    },
+    {
+      "start": "2017-03-26T00:00:00",
+      "end_exclusive": "2017-04-02T00:00:00"
+    },
+    {
+      "start": "2017-04-02T00:00:00",
+      "end_exclusive": "2017-04-09T00:00:00"
+    },
+    {
+      "start": "2017-04-09T00:00:00",
+      "end_exclusive": "2017-04-16T00:00:00"
+    },
+    {
+      "start": "2017-04-16T00:00:00",
+      "end_exclusive": "2017-04-23T00:00:00"
+    },
+    {
+      "start": "2017-04-23T00:00:00",
+      "end_exclusive": "2017-04-30T00:00:00"
+    },
+    {
+      "start": "2017-04-30T00:00:00",
+      "end_exclusive": "2017-05-07T00:00:00"
+    },
+    {
+      "start": "2017-05-07T00:00:00",
+      "end_exclusive": "2017-05-14T00:00:00"
+    },
+    {
+      "start": "2017-05-14T00:00:00",
+      "end_exclusive": "2017-05-21T00:00:00"
+    },
+    {
+      "start": "2017-05-21T00:00:00",
+      "end_exclusive": "2017-05-28T00:00:00"
+    },
+    {
+      "start": "2017-05-28T00:00:00",
+      "end_exclusive": "2017-06-04T00:00:00"
+    },
+    {
+      "start": "2017-06-04T00:00:00",
+      "end_exclusive": "2017-06-11T00:00:00"
+    },
+    {
+      "start": "2017-06-11T00:00:00",
+      "end_exclusive": "2017-06-18T00:00:00"
+    },
+    {
+      "start": "2017-06-18T00:00:00",
+      "end_exclusive": "2017-06-25T00:00:00"
+    },
+    {
+      "start": "2017-06-25T00:00:00",
+      "end_exclusive": "2017-07-02T00:00:00"
+    },
+    {
+      "start": "2017-07-02T00:00:00",
+      "end_exclusive": "2017-07-09T00:00:00"
+    },
+    {
+      "start": "2017-07-09T00:00:00",
+      "end_exclusive": "2017-07-16T00:00:00"
+    },
+    {
+      "start": "2017-07-16T00:00:00",
+      "end_exclusive": "2017-07-23T00:00:00"
+    },
+    {
+      "start": "2017-07-23T00:00:00",
+      "end_exclusive": "2017-07-30T00:00:00"
+    },
+    {
+      "start": "2017-07-30T00:00:00",
+      "end_exclusive": "2017-08-06T00:00:00"
+    },
+    {
+      "start": "2017-08-06T00:00:00",
+      "end_exclusive": "2017-08-13T00:00:00"
+    },
+    {
+      "start": "2017-08-13T00:00:00",
+      "end_exclusive": "2017-08-20T00:00:00"
+    },
+    {
+      "start": "2017-08-20T00:00:00",
+      "end_exclusive": "2017-08-27T00:00:00"
+    },
+    {
+      "start": "2017-08-27T00:00:00",
+      "end_exclusive": "2017-09-03T00:00:00"
+    },
+    {
+      "start": "2017-09-03T00:00:00",
+      "end_exclusive": "2017-09-10T00:00:00"
+    },
+    {
+      "start": "2017-09-10T00:00:00",
+      "end_exclusive": "2017-09-17T00:00:00"
+    },
+    {
+      "start": "2017-09-17T00:00:00",
+      "end_exclusive": "2017-09-24T00:00:00"
+    },
+    {
+      "start": "2017-09-24T00:00:00",
+      "end_exclusive": "2017-10-01T00:00:00"
+    },
+    {
+      "start": "2017-10-01T00:00:00",
+      "end_exclusive": "2017-10-08T00:00:00"
+    },
+    {
+      "start": "2017-10-08T00:00:00",
+      "end_exclusive": "2017-10-15T00:00:00"
+    },
+    {
+      "start": "2017-10-15T00:00:00",
+      "end_exclusive": "2017-10-22T00:00:00"
+    },
+    {
+      "start": "2017-10-22T00:00:00",
+      "end_exclusive": "2017-10-29T00:00:00"
+    },
+    {
+      "start": "2017-10-29T00:00:00",
+      "end_exclusive": "2017-11-05T00:00:00"
+    },
+    {
+      "start": "2017-11-05T00:00:00",
+      "end_exclusive": "2017-11-12T00:00:00"
+    },
+    {
+      "start": "2017-11-12T00:00:00",
+      "end_exclusive": "2017-11-19T00:00:00"
+    },
+    {
+      "start": "2017-11-19T00:00:00",
+      "end_exclusive": "2017-11-26T00:00:00"
+    },
+    {
+      "start": "2017-11-26T00:00:00",
+      "end_exclusive": "2017-12-03T00:00:00"
+    },
+    {
+      "start": "2017-12-03T00:00:00",
+      "end_exclusive": "2017-12-10T00:00:00"
+    },
+    {
+      "start": "2017-12-10T00:00:00",
+      "end_exclusive": "2017-12-17T00:00:00"
+    },
+    {
+      "start": "2017-12-17T00:00:00",
+      "end_exclusive": "2017-12-24T00:00:00"
+    },
+    {
+      "start": "2017-12-24T00:00:00",
+      "end_exclusive": "2017-12-31T00:00:00"
+    },
+    {
+      "start": "2017-12-31T00:00:00",
+      "end_exclusive": "2018-01-01T00:00:00"
+    }
+  ],
+  "training": "all retained timestamps strictly before each origin; fresh pipeline per fold and policy",
+  "weather_row_policies": [
+    "first",
+    "last"
+  ],
+  "weather_row_semantics": "first or last valid-temperature source row per timestamp; require target agreement",
+  "reserved_start": "2018-01-01T00:00:00",
+  "reserved_targets_validated": false,
+  "reserved_scored": false,
+  "timestamp_semantics": "naive whole-hour source clock; no timezone/DST inference or gap filling",
+  "seasonal_lag": "exact same-clock-time seven calendar days earlier from training only",
+  "seasonal_fallback": "training weekday/hour mean, then training global mean",
+  "model_parameters": {
+    "n_estimators": 100,
+    "max_depth": 12,
+    "min_samples_leaf": 2,
+    "random_state": 42,
+    "n_jobs": 1
+  },
+  "metrics": [
+    "mae",
+    "rmse"
+  ],
+  "pooling": "every retained 2017 timestamp once; pool residuals, not fold metrics",
+  "temporal_cohorts": "fixed calendar quarters of 2017, descriptive only",
+  "paired_mae_sign": "random_forest minus baseline on the same observations",
+  "sensitivity_sign": "last minus first on the same observations; no policy selection",
+  "limitations": "development year, not untouched test data; first/last are alternatives, not exhaustive bounds; operational feature/label latency unknown; no significance claim"
+}
