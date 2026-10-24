@@ -71,8 +71,14 @@ jobs:
           from pathlib import Path
           actual = json.loads(Path('weather-result.json').read_text())
           reference = json.loads(Path('benchmarks/weather-sensitivity-2017.json').read_text())
-          for key in ('protocol', 'protocol_sha256', 'protocol_file_sha256', 'source_sha256', 'source_code_sha256', 'evaluation_lock_sha256', 'cleaning', 'feature_changes'):
+          for key in ('protocol', 'protocol_sha256', 'protocol_file_sha256', 'source_sha256', 'evaluation_lock_sha256', 'cleaning', 'feature_changes'):
               assert actual[key] == reference[key], key
+          # Preserve historical implementation hashes in the reference report.
+          # Require the same source coverage, with hashes of the current files.
+          import hashlib
+          assert set(actual['source_code_sha256']) == set(reference['source_code_sha256'])
+          for path, digest in actual['source_code_sha256'].items():
+              assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest, path
           for name in ('first', 'last'):
               policy, expected = actual['policies'][name], reference['policies'][name]
               assert policy['coverage'] == expected['coverage']

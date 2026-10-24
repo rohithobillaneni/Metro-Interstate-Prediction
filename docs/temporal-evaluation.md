@@ -75,6 +75,19 @@ Installation and full-suite commands are in [CONTRIBUTING](../CONTRIBUTING.md).
 protocol, source and implementation hashes, dependency lock/environment,
 cleaning counts, ordered timestamp/target/prediction rows and fold metrics.
 
+The temporal and weather-sensitivity commands snapshot the lockfile hash,
+installed-version metadata and protocol before loading/fitting and recheck them
+after fold computation, along with CSV and implementation hashes (and the saved
+weather protocol file). Detected drift aborts before writing a report. Use a
+fresh process in a stable checkout and environment: these boundary checks do
+not attest loaded code or dependency binaries, and cannot detect changes reverted
+between checks. A matching lockfile hash records the file; it does not by itself
+prove that the environment was installed from that lock.
+
+Published reports retain their historical implementation hashes. Reproductions
+record current source hashes; changing only provenance checks must not be
+presented as a new model result or used to overwrite historical evidence.
+
 Coverage reports observed hours, expected clock slots, missing hours and the
 longest missing run. Validation coverage includes leading/trailing gaps in the
 fixed window. Training coverage starts at its earliest retained timestamp and
