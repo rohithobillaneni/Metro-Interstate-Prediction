@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a predeclared paired first/last weather-row sensitivity experiment across
+  every retained 2017 hour, with 53 fixed expanding-origin folds, quarterly
+  diagnostics and raw predictions. Preserve the first-row default, historical
+  reports and reserved 2018 isolation.
+
 - Add fixed expanding-window development validation, exact seven-calendar-day
   seasonal baselines, same-cohort predictions and pooled/paired metrics.
 - Exclude reserved 2018 values before validation in the new development loader;

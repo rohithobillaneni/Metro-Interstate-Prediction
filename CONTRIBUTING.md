@@ -1,7 +1,8 @@
 # Contributing
 
 For evaluation changes, read [the M1 protocol](docs/evaluation.md) and
-[the fixed temporal protocol](docs/temporal-evaluation.md), install
+[the fixed temporal protocol](docs/temporal-evaluation.md) and
+[the weather-row sensitivity protocol](docs/weather-sensitivity.md), install
 `requirements-serving.txt` and `requirements-frontend.txt` in Python 3.13, and run
 `python -m unittest discover -s tests -v` from the repository root.
 Keep tests offline and use synthetic fixtures for edge cases.

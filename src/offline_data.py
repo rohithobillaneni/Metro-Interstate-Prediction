@@ -153,7 +153,7 @@ def load_csv(path: str | Path) -> tuple[tuple[TrafficRecord, ...], LoadDiagnosti
 
 
 def load_development_csv(
-    path: str | Path,
+    path: str | Path, *, weather_row: str = "first",
 ) -> tuple[tuple[TrafficRecord, ...], DevelopmentLoadDiagnostics]:
     """Load only timestamps before 2018 without validating reserved values.
 
@@ -162,10 +162,15 @@ def load_development_csv(
     duplicate-target checks or record construction. Their malformed targets and
     feature values cannot affect development records or cleaning decisions.
 
+    ``weather_row`` selects the first (default) or last valid-temperature row
+    in source order per timestamp. Both require agreement of duplicate targets.
+
     Counts include all source rows: raw_count == reserved_rows_excluded +
     invalid_temp_dropped + duplicate_extras + distinct_timestamps.
     """
-    records, diagnostics, excluded = _load_csv(path, exclude_from=datetime(2018, 1, 1))
+    records, diagnostics, excluded = _load_csv(
+        path, exclude_from=datetime(2018, 1, 1), weather_row=weather_row,
+    )
     return records, DevelopmentLoadDiagnostics(
         raw_count=diagnostics.raw_count,
         invalid_temp_dropped=diagnostics.invalid_temp_dropped,
@@ -176,8 +181,10 @@ def load_development_csv(
 
 
 def _load_csv(
-    path: str | Path, *, exclude_from: datetime | None = None,
+    path: str | Path, *, exclude_from: datetime | None = None, weather_row: str = "first",
 ) -> tuple[tuple[TrafficRecord, ...], LoadDiagnostics, int]:
+    if weather_row not in ("first", "last"):
+        raise ValueError("weather_row must be first or last")
     records: dict[datetime, TrafficRecord] = {}
     targets: dict[datetime, float] = {}
     raw_count = invalid_temp_dropped = duplicate_extras = reserved_rows_excluded = 0
@@ -225,7 +232,8 @@ def _load_csv(
                 continue
             if date_time in records:
                 duplicate_extras += 1
-                continue
+                if weather_row == "first":
+                    continue
             records[date_time] = TrafficRecord(
                 date_time=date_time,
                 traffic_volume=target,

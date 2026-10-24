@@ -11,7 +11,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -47,8 +47,13 @@ jobs:
           from pathlib import Path
           actual = json.loads(Path('temporal-result.json').read_text())
           reference = json.loads(Path('benchmarks/temporal-development-2017.json').read_text())
-          for key in ('protocol', 'protocol_sha256', 'source_sha256', 'source_code_sha256', 'evaluation_lock_sha256', 'cleaning', 'pooled_count'):
+          for key in ('protocol', 'protocol_sha256', 'source_sha256', 'evaluation_lock_sha256', 'cleaning', 'pooled_count'):
               assert actual[key] == reference[key], key
+          # Historical report hashes identify its historical implementation.
+          # Check current provenance against current files, not old code bytes.
+          import hashlib
+          for path, digest in actual['source_code_sha256'].items():
+              assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest, path
           assert len(actual['folds']) == len(reference['folds']) == 4
           for fold, expected in zip(actual['folds'], reference['folds']):
               for key in ('validation_start', 'validation_end', 'train', 'validation', 'coverage', 'baselines'):
@@ -56,4 +61,29 @@ jobs:
               assert [(r['date_time'], r['actual']) for r in fold['predictions']] == [(r['date_time'], r['actual']) for r in expected['predictions']]
           # Tests recompute pooled/paired metrics from predictions. Floating-point
           # predictions/metrics need not be identical across platforms.
+          PYCODE
+      - name: Reproduce full-year paired weather-row sensitivity
+        run: python -m src.weather_sensitivity --data data/Metro_Interstate_Traffic_Volume.csv --output weather-result.json
+      - name: Check sensitivity protocol and identical cohorts
+        run: |
+          python - <<'PYCODE'
+          import json
+          from pathlib import Path
+          actual = json.loads(Path('weather-result.json').read_text())
+          reference = json.loads(Path('benchmarks/weather-sensitivity-2017.json').read_text())
+          for key in ('protocol', 'protocol_sha256', 'protocol_file_sha256', 'source_sha256', 'source_code_sha256', 'evaluation_lock_sha256', 'cleaning', 'feature_changes'):
+              assert actual[key] == reference[key], key
+          for name in ('first', 'last'):
+              policy, expected = actual['policies'][name], reference['policies'][name]
+              assert policy['coverage'] == expected['coverage']
+              assert policy['pooled']['count'] == expected['pooled']['count']
+              assert len(policy['folds']) == len(expected['folds']) == 53
+              for quarter in ('Q1', 'Q2', 'Q3', 'Q4'):
+                  assert policy['quarters'][quarter]['count'] == expected['quarters'][quarter]['count']
+              for fold, prior in zip(policy['folds'], expected['folds']):
+                  for key in ('validation_start', 'validation_end', 'train', 'validation', 'coverage', 'baselines'):
+                      assert fold[key] == prior[key], key
+                  assert [(r['date_time'], r['actual']) for r in fold['predictions']] == [(r['date_time'], r['actual']) for r in prior['predictions']]
+          # The evaluator enforces paired baseline identity. Unit tests recompute
+          # residual metrics; floating-point predictions can differ by platform.
           PYCODE

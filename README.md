@@ -22,7 +22,10 @@ This is same-hour estimation using observed weather, not an advance forecast.
 
 For fixed expanding-window development validation and an exact seasonal
 baseline, see the [temporal evaluation protocol](docs/temporal-evaluation.md).
-It evaluates four 2017 weeks and leaves 2018 unscored.
+It evaluates four 2017 weeks and leaves 2018 unscored. The separate
+[weather-row sensitivity experiment](docs/weather-sensitivity.md) covers all
+retained 2017 hours under first/last duplicate-weather-row policies, with the
+same frozen model and no 2018 scoring.
 
 For newly trained local inference and API startup, follow the
 [serving instructions](docs/serving.md). The API uses an explicitly trusted
