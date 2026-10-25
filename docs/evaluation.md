@@ -69,6 +69,14 @@ writes JSON to stdout. Installation needs package access; evaluation is offline.
 For the complete test suite including local API/artifact tests, install
 `requirements-serving.txt` plus `requirements-frontend.txt` and run `python -m unittest discover -s tests -v`.
 
+The evaluator snapshots the CSV digest, model settings and runtime/dependency
+metadata before loading and fitting. It rejects detected changes before
+returning a report, so the CLI emits no report for that failed run. Stable runs
+retain the existing schema and numerical behavior. These boundary checks do
+not detect changes reverted between reads, attest loaded code, or prevent
+changes after the final check. The M1 report does not record implementation or
+dependency-lock hashes; do not treat it as the fuller M2 provenance contract.
+
 ## Limits and historical comparison
 
 The original training path used a random split, dropped timestamp identity and

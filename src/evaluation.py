@@ -79,10 +79,25 @@ def _cohort(records: tuple[TrafficRecord, ...]) -> dict:
     }
 
 
+def _environment() -> dict:
+    """Read runtime and installed-version metadata, not loaded-code identity."""
+    return {
+        "python": platform.python_version(),
+        "system": platform.system(),
+        "machine": platform.machine(),
+        "dependencies": {
+            name: version(name)
+            for name in ("numpy", "pandas", "scikit-learn", "scipy", "joblib", "threadpoolctl")
+        },
+    }
+
+
 def evaluate(path: str | Path) -> dict:
     """Evaluate calendar 2017; reserve 2018 onward without fitting or scoring it."""
     path = Path(path)
     source_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    environment = _environment()
+    model_parameters = MODEL_PARAMETERS.copy()
     records, diagnostics = load_csv(path)
     if hashlib.sha256(path.read_bytes()).hexdigest() != source_hash:
         raise ValueError("Input CSV changed while loading")
@@ -116,6 +131,14 @@ def evaluate(path: str | Path) -> dict:
                 for name, values in predictions.items()
             },
         }
+    # Keep the existing report bound to its initial snapshot. These checks
+    # detect persistent boundary drift, not mutations reverted between reads.
+    if hashlib.sha256(path.read_bytes()).hexdigest() != source_hash:
+        raise ValueError("Input CSV changed during evaluation")
+    if _environment() != environment:
+        raise ValueError("Runtime metadata changed during evaluation")
+    if MODEL_PARAMETERS != model_parameters:
+        raise ValueError("Model parameters changed during evaluation")
     return {
         "schema_version": 1,
         "task": "same-hour traffic estimation with observed weather; not advance forecasting",
@@ -129,18 +152,10 @@ def evaluate(path: str | Path) -> dict:
             "reserved_test": {**_cohort(partitions.test), "scored": False, "used_for_fit": False},
         },
         "weekday_hour_fallback_count": fallbacks,
-        "model_parameters": MODEL_PARAMETERS.copy(),
+        "model_parameters": model_parameters,
         "metrics": results,
         "validation_months": monthly,
-        "environment": {
-            "python": platform.python_version(),
-            "system": platform.system(),
-            "machine": platform.machine(),
-            "dependencies": {
-                name: version(name)
-                for name in ("numpy", "pandas", "scikit-learn", "scipy", "joblib", "threadpoolctl")
-            },
-        },
+        "environment": environment,
     }
 
 

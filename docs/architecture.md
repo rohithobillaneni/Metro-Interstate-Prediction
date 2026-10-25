@@ -21,6 +21,15 @@ The library functions are internal project interfaces, not a stable published
 package API. Calendar cutoffs are fixed in the CLI to prevent silent protocol
 changes; library partitioning accepts explicit cutoffs for tests and future work.
 
+The supported installation is a source checkout with the documented Python3.13
+hash-locked environments. The historical `setup.py` is not that installation
+path; an installed wheel and renamed modules are not required for these commands.
+M1 snapshots its reported CSV/configuration/environment fields before computation
+and rejects detected drift before returning output. M2 additionally records
+implementation and dependency-lock hashes. Preserve these distinct report
+contracts rather than implying uniform runtime attestation. See the
+[M1 protocol](evaluation.md) for the boundary-check limitations.
+
 For this small dataset, records and pandas features are materialized in memory.
 The forest uses one worker, 100 trees, depth at most 12 and a fixed random seed.
 No plugin architecture or service abstraction is needed for this milestone.
