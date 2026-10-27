@@ -83,10 +83,19 @@ The frontend includes its shared feature module and disables usage telemetry;
 CORS/XSRF protections remain enabled.
 
 The Dockerfiles pin the official Python3.13-slim multi-platform manifest digest.
-Dependency hashes pin packages separately. The initial digest was resolved from
+Dependency hashes pin packages separately. The current digest was resolved from
 the official `library/python` registry manifest and independently hashed on
-23 October2026. Pins require reviewed security updates; they do not establish
-vulnerability absence or identical floating-point predictions across machines.
+27 October2026. Its Linux amd64 and arm64 images contain Python3.13.18 and
+Debian13. The Python patch includes fixes for compromised TLS certificates,
+`TemporaryDirectory` cleanup and `tar_filter`; see the
+[upstream release comparison](https://github.com/python/cpython/compare/v3.13.17...v3.13.18).
+This does not imply those issues were exploitable through Metro.
+
+The base still has Debian advisory matches; this update does not fix all OS
+packages. Pins require reviewed security updates and do not establish vulnerability
+absence or identical floating-point predictions across machines. Metadata was
+inspected for both architectures; runtime verification is the Linux CI check
+described above, not a claim of testing every architecture.
 Dependency licence notices are retained in their installed distributions.
 
 The historical Cassandra ingestion/training paths and saved models remain

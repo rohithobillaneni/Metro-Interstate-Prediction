@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Update both pinned container bases from Python3.13.17 to 3.13.18 for upstream
+  security fixes. Preserve dependency locks, benchmark protocols and container
+  restrictions; retain the fresh same-image training/serving check.
+
 - Reject detected dependency-lock, runtime-metadata and protocol changes during
   temporal/weather evaluation. Preserve initial provenance, historical reports
   and numerical protocols; test report failure and competing-output boundaries.

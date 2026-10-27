@@ -14,6 +14,11 @@ Use loopback binding. The supported containers run as non-root users, mount the
 model read-only, drop capabilities and disable Streamlit usage telemetry. These
 controls are not authentication: public deployment remains outside this scope.
 Container base-image digests and dependency locks need deliberate security updates.
+For source-checkout use, install a security-maintained Python3.13 patch release
+(at least 3.13.18 as of 27 October2026). Dependency locks do not patch the Python
+interpreter or operating system. The containers pin that interpreter update;
+known Debian base-package advisory matches remain under review. This is not a
+claim that the full image is free of vulnerabilities.
 
 Please use the repository's GitHub **Security → Report a vulnerability** option
 when available. If it is unavailable, open an issue requesting a private contact
