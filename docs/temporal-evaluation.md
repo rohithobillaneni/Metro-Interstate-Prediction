@@ -63,11 +63,12 @@ traffic labels become available for an operational forecast.
 
 ## Report and reproduction
 
-With the existing locked Python 3.13 environment, from the repository root:
+Complete the [maintained setup](../README.md#maintained-setup), including the
+patched-interpreter check. From the repository root:
 
 ```sh
-python -m unittest discover -s tests -p 'test_temporal_evaluation.py' -v
-python -m src.temporal_evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output temporal-result.json
+.venv/bin/python -m unittest discover -s tests -p 'test_temporal_evaluation.py' -v
+.venv/bin/python -m src.temporal_evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output temporal-result.json
 ```
 
 Installation and full-suite commands are in [CONTRIBUTING](../CONTRIBUTING.md).

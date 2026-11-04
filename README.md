@@ -1,273 +1,83 @@
 # Metro Traffic Volume Prediction
 
-A Python project for estimating hourly I-94 traffic volume from calendar and
-observed weather features. The maintained entry point is now an offline,
-chronological evaluation using the bundled public UCI dataset.
+A Python reference project for estimating hourly I-94 traffic volume from
+calendar and observed weather features, using the public UCI dataset.
+The maintained scope is offline evaluation and trusted local API/frontend
+reproduction. This is retrospective same-hour estimation, not an advance
+forecast or an authenticated public service.
 
-## Reproduce the offline evaluation
+## Maintained setup
+
+Use a source checkout with a security-maintained Python 3.13 patch that meets
+the [interpreter requirement in SECURITY.md](SECURITY.md). Check the actual
+interpreter before creating the environment and check an existing environment
+again after updating Python. Dependency installation does not patch Python.
+The commands below use a POSIX shell and explicitly select the local environment;
+run subsequent commands from the repository root.
 
 ```sh
+git clone https://github.com/rohithobillaneni/Metro-Interstate-Prediction.git
+cd Metro-Interstate-Prediction
+python3.13 --version
 python3.13 -m venv .venv
+.venv/bin/python --version
 .venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-serving.txt -r requirements-frontend.txt
 .venv/bin/python -m unittest discover -s tests -v
+```
+
+Installation needs package access. Evaluation and local model training need no
+Cassandra instance, API credentials or external service. These hash-locked
+dependencies cover evaluation, API and frontend tests. The historical
+`requirements.txt` and `setup.py` are not this installation contract; a package
+registry installation is not currently supported. See the
+[architecture and supported interfaces](docs/architecture.md).
+
+## Evaluate
+
+```sh
 .venv/bin/python -m src.evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output validation-result.json
 ```
 
-This fits on pre-2017 data and compares a seeded forest with mean and calendar
-baselines on 2017. It preserves 2018 as an unscored reserved period. It requires
-no Cassandra instance, API credentials or saved model. See the
-[evaluation protocol](docs/evaluation.md), [architecture](docs/architecture.md),
-[dataset attribution](DATASET.md) and [contribution guide](CONTRIBUTING.md).
-This is same-hour estimation using observed weather, not an advance forecast.
-
-For fixed expanding-window development validation and an exact seasonal
-baseline, see the [temporal evaluation protocol](docs/temporal-evaluation.md).
-It evaluates four 2017 weeks and leaves 2018 unscored. The separate
-[weather-row sensitivity experiment](docs/weather-sensitivity.md) covers all
-retained 2017 hours under first/last duplicate-weather-row policies, with the
-same frozen model and no 2018 scoring.
-
-For newly trained local inference and API startup, follow the
-[serving instructions](docs/serving.md). The API uses an explicitly trusted
-fresh artifact; it never falls back to the historical pickle model.
-
-**Maturity:** offline evaluation, local API serving and the frontend have a maintained
-reproduction path. See [local serving](docs/serving.md) and
-[container reproduction](docs/containers.md). This remains a reference project,
-not an authenticated public service. Historical models and stored results remain
-preserved and unverified.
-
-The original walkthrough below records the earlier implementation. Use the
-maintained commands above and linked guides; the historical Cassandra/model
-selection and deployment instructions are not the supported reproduction path.
-
-# Front-End
-
-![Main-Page](https://github.com/user-attachments/assets/4b2dc36e-353e-4b0e-abf2-cc116485bb11)
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Technologies](#technologies)
-- [Project Structure](#project-structure)
-- [Installation & Setup](#installation--setup)
-  - [Local Setup](#local-setup)
-  - [Docker Setup](#docker-setup)
-- [Data Preprocessing](#data-preprocessing)
-- [Data Transformation & Model Training](#data-transformation--model-training)
-- [API & Frontend](#api--frontend)
-- [Usage](#usage)
-- [Deployment & Future Work](#deployment--future-work)
-- [License](#license)
-- [Contact](#contact)
-
----
-
-## Overview
-
-This project predicts hourly traffic volume on a metro interstate using machine learning. It performs:
-- Data ingestion from Cassandra.
-- Data cleaning, feature engineering, and transformation.
-- Model training with multiple algorithms and selection of the best model.
-- Deployment of a FastAPI backend to serve predictions.
-- An interactive Streamlit frontend to visualize predictions.
-- Containerization with Docker and Docker Compose for portability.
-
----
-
-## Features
-
-- **Data Preprocessing:**  
-  Loads raw traffic data from Cassandra, converts temperature units, removes outliers, extracts time features (weekday, hour, month), categorizes hour into time slots, and converts holidays to binary.
-
-- **Data Transformation:**  
-  Applies numerical scaling, one-hot encoding, ordinal encoding, and cyclic encoding through a robust pipeline.
-
-- **Model Training & Evaluation:**  
-  Evaluates multiple models using cross-validation, selects the best (e.g., CatBoost), and saves the final pipeline.
-
-- **API & Frontend:**  
-  A FastAPI backend exposes a `/predict` endpoint, and a Streamlit frontend provides an interactive UI for prediction and visualization.
-
-- **Dockerized Deployment:**  
-  Both backend and frontend are containerized with Docker and managed via Docker Compose.
-
----
-
-## Technologies
-
-- **Programming Language:** Python
-- **Libraries:** Pandas, NumPy, scikit-learn, CatBoost, XGBoost, FastAPI, Uvicorn, Streamlit, Plotly, Cassandra Driver
-- **Database:** Cassandra
-- **Containerization:** Docker, Docker Compose
-- **Version Control:** Git, GitHub
-
----
-
-## Project Structure
-
-```
-Metro_Traffic_Volume_Prediction/
-├── catboost_info/
-├── data/
-│   ├── Metro_Interstate_Traffic_Volume.csv
-│   ├── X_processed.csv
-│   ├── X_test.csv
-│   ├── y_processed.csv
-│   └── y_test.csv
-├── models/
-│   ├── evaluation_results.txt
-│   ├── preprocessor.pkl
-│   └── traffic_model.pkl
-├── notebook/
-│   └── Metro_Interstate_Traffic.ipynb
-├── src/
-│   ├── __init__.py
-│   ├── app.py
-│   ├── data_preprocessing.py
-│   ├── data_transformation.py
-│   ├── model_evaluation.py
-│   └── model_training.py
-├── .gitignore
-├── README.md
-├── __init__.py
-├── frontend.py
-├── requirements.txt
-├── setup.py
-├── Dockerfile
-├── Dockerfile-frontend
-└── docker-compose.yml
-```
-
-**Installation & Setup**
-### Local Setup
-
-1. **Clone the Repository:**
-
-   ```bash
-   git clone https://github.com/<your-username>/Metro_Traffic_Volume_Prediction.git
-   cd Metro_Traffic_Volume_Prediction
-   ```
-
-2. **Create and Activate a Virtual Environment:**
-
-   ```bash
-   python -m venv venv
-   source venv/bin/activate      # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install Dependencies:**
-
-   ```bash
-   pip install --no-cache-dir -r requirements.txt
-   ```
-
-4. **Run the Preprocessing, Training, and Evaluation Scripts:**
-
-   - Preprocess the data:
-     ```bash
-     python src/data_preprocessing.py
-     ```
-   - Train and evaluate the model:
-     ```bash
-     python src/model_training.py
-     python src/model_evaluation.py
-     ```
-
-5. **Run the FastAPI Backend:**
-
-   ```bash
-   uvicorn src.app:app --reload --host 127.0.0.1 --port 8000
-   ```
-
-6. **Run the Frontend (Streamlit):**
-
-   ```bash
-   streamlit run frontend.py
-   ```
-
-### Docker Setup
-
-1. **Ensure Docker is Installed:**  
-   Follow the [official Docker installation guide](https://docs.docker.com/get-docker/).
-
-2. **Build Docker Images:**
-
-   From the project root, run:
-   ```bash
-   docker-compose build --no-cache
-   ```
-
-3. **Run the Containers:**
-
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **Access the Applications:**
-
-   - FastAPI Backend: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - Streamlit Frontend: [http://localhost:8501](http://localhost:8501)
-
-5. **Stopping the Containers:**
-
-   ```bash
-   docker-compose down
-   ```
-
-## Data Preprocessing
-
-- The `data_preprocessing.py` script loads data from Cassandra (or CSV for local testing), cleans the data, performs outlier removal on temperature, extracts features (weekday, hour, month, hour_category), and converts the holiday field to binary.
-- Preprocessed data is saved to `data/X_processed.csv` and `data/y_processed.csv`.
-
-## Data Transformation & Model Training
-
-- **Transformation:**  
-  `data_transformation.py` creates a preprocessing pipeline that scales numerical features, one-hot encodes `weather_main`, ordinal-encodes `hour_category`, passes binary features, and applies cyclic encoding to time features.
-  
-- **Training:**  
-  The `model_training.py` script loads preprocessed data, applies a train-test split, evaluates several models using cross-validation, and selects the best-performing model (CatBoost).  
-  It then creates a final pipeline, trains the model, evaluates on the test set, and saves the final model to `models/traffic_model.pkl`.
-
-## API & Frontend
-
-- **FastAPI Backend (`src/app.py`):**  
-  Provides an endpoint `/predict` that accepts traffic conditions, preprocesses input data (with helper functions), and returns a traffic volume prediction.
-  
-- **Streamlit Frontend (`frontend.py`):**  
-  An interactive UI for users to input traffic conditions and visualize predictions. The frontend sends requests to the FastAPI backend using the service name in Docker Compose for inter-container communication.
-
-## Usage
-
-1. **Using Local Setup:**  
-   - Run the backend and frontend as described in the [Local Setup](#local-setup) section.
-   - Test the API at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) and interact with the Streamlit app.
-
-2. **Using Docker:**  
-   - Start the containers with `docker-compose up -d` and then access the API and frontend using their respective URLs.
-
-## Deployment
-
-For production deployment:
-- **CI/CD:** Consider integrating GitHub Actions or Jenkins to automate tests and builds.
-- **Cloud Deployment:** Deploy Docker containers to platforms like AWS (ECS, Fargate), Google Cloud Run, or Azure Container Instances.
-- **Monitoring:** Set up logging and monitoring (e.g., Prometheus, Grafana) to track app performance and errors.
-
-## Future Work
-
-- **Model Improvements:**  
-  Experiment with additional features and further model tuning.
-  
-- **Scaling:**  
-  Scale the solution with Kubernetes and improve the CI/CD pipeline.
-  
-- **User Feedback:**  
-  Integrate user feedback for continuous model improvement.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
+This fits on pre-2017 data and compares a seeded forest with training-only mean
+and weekday/hour baselines on 2017. **2018 remains unscored.** The bundled raw
+CSV is the input; historical processed/test CSVs and saved models are not used.
+Choose a separate output filename for each report you want to retain.
+
+| Evaluation | Purpose and reproduction |
+|---|---|
+| Fixed-year comparison | [M1 protocol and limitations](docs/evaluation.md); the command above |
+| Temporal development validation | [Four expanding-window weeks and exact seasonal baseline](docs/temporal-evaluation.md) |
+| Weather-row sensitivity | [53 fixed folds covering retained 2017 hours, paired first/last policies](docs/weather-sensitivity.md) |
+
+The committed reports retain unfavorable comparisons: the seasonal baseline has
+lower pooled RMSE in the four-week experiment, and the first-row forest has
+higher Q4 MAE than the calendar baseline in the full-year experiment. These are
+different cohorts. 2017 is already used development data, not an untouched final
+test. Missing hours, naive local-clock timestamps and duplicate weather-row
+choices limit interpretation; the linked protocols describe these boundaries.
+
+## Run locally
+
+After the maintained setup, follow [local inference and API startup](docs/serving.md)
+to train a fresh bundle, retain its manifest digest separately, start the API on
+loopback, and run the frontend. A bundle's output directory must be new. Only
+load your own reviewed training output: pickle can execute code, and a checksum
+does not make an untrusted model safe. Historical pickles are never a fallback.
+
+For an isolated Linux runtime, use [container reproduction](docs/containers.md).
+That guide requires Docker Engine and Compose v2 and trains the model inside the
+same backend image used for serving. It is a local reproduction path, not a
+public deployment guide.
+
+## Data, contributions and history
+
+Source code is [MIT licensed](LICENSE). The bundled UCI Metro Interstate Traffic
+Volume dataset is separately licensed under **CC BY 4.0**; see
+[DATASET.md](DATASET.md) for provenance, attribution and redistribution terms.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before changes
+or use with model artifacts.
+
+The [original project walkthrough](docs/historical-walkthrough.md) is preserved
+verbatim as historical documentation. Its earlier Cassandra/model-selection and
+deployment instructions are unsupported. Historical artifacts and stored results
+remain in the repository and are unverified under the maintained protocols.

@@ -51,23 +51,18 @@ different platforms or dependency versions are not promised.
 
 ## Reproduction
 
-From the repository root, with Python 3.13:
+First complete the [maintained setup](../README.md#maintained-setup), including
+the patched-interpreter check and full test suite. From the repository root:
 
 ```sh
-python3.13 -m venv .venv
-.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-evaluation.txt
-.venv/bin/python -m unittest discover -s tests -p 'test_offline_data.py' -v
-.venv/bin/python -m unittest discover -s tests -p 'test_evaluation.py' -v
 .venv/bin/python -m src.evaluation --data data/Metro_Interstate_Traffic_Volume.csv --output validation-result.json
 ```
 
-The input requirements specify only the evaluation stack; the generated lock
-pins transitives and verifies downloaded artifact hashes. The legacy broad
-`requirements.txt` and `setup.py` are not used for this path. The command does
-not overwrite old results or any historical artifact. An omitted `--output`
-writes JSON to stdout. Installation needs package access; evaluation is offline.
-For the complete test suite including local API/artifact tests, install
-`requirements-serving.txt` plus `requirements-frontend.txt` and run `python -m unittest discover -s tests -v`.
+The serving/frontend locks include the evaluation stack and verify downloaded
+artifact hashes. The legacy broad `requirements.txt` and `setup.py` are not used.
+Keep generated reports separate from committed historical results. An omitted
+`--output` writes JSON to stdout. Installation needs package access; evaluation
+is offline.
 
 The evaluator snapshots the CSV digest, model settings and runtime/dependency
 metadata before loading and fitting. It rejects detected changes before
