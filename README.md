@@ -56,6 +56,9 @@ different cohorts. 2017 is already used development data, not an untouched final
 test. Missing hours, naive local-clock timestamps and duplicate weather-row
 choices limit interpretation; the linked protocols describe these boundaries.
 
+The [technical report](docs/technical-report.md) brings these recorded results
+together, explains the comparison boundaries and preserves the negative findings.
+
 ## Run locally
 
 After the maintained setup, follow [local inference and API startup](docs/serving.md)
