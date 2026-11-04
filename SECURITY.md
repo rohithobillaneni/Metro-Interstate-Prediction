@@ -23,3 +23,6 @@ claim that the full image is free of vulnerabilities.
 Please use the repository's GitHub **Security → Report a vulnerability** option
 when available. If it is unavailable, open an issue requesting a private contact
 channel without disclosing exploit details, credentials or private data.
+
+The [v0.1.0 dated security assessment](docs/release-security-0.1.0.md) records
+the checked inputs, known Debian matches and supported-scope limitations.

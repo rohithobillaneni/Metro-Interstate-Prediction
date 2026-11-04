@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 0.1.0 — 2026-11-04
+
+This first supported release uses the source-checkout setup in README.md. The
+historical `setup.py` version 0.0.1 and `requirements.txt` are not supported
+installation paths; no package-registry distribution is released. Train a fresh
+local bundle and retain its manifest digest separately. Regenerate bundles when
+source or dependency changes invalidate their pins; do not bypass integrity
+checks or reuse the historical pickles.
+
+- Document the maintained source-checkout setup, preserve the original walkthrough
+  as historical documentation, and add a technical report linking the frozen
+  development results, negative comparisons and reproduction commands.
+- Pin and verify Python 3.13.18 before evaluation CI; preserve all existing
+  benchmark, container and code-scanning checks.
+- Reject detected data, model-parameter and runtime-metadata drift during M1
+  evaluation while preserving its original report schema and numerical protocol.
+
+
 - Update both pinned container bases from Python3.13.17 to 3.13.18 for upstream
   security fixes. Preserve dependency locks, benchmark protocols and container
   restrictions; retain the fresh same-image training/serving check.
