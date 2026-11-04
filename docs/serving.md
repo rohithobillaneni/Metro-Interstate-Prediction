@@ -23,12 +23,10 @@ These integrity checks do not sandbox Python or authenticate the training author
 
 ## Train a fresh bundle
 
-From the repository root, with Python 3.13:
+First complete the [maintained setup](../README.md#maintained-setup), including
+the patched-interpreter check. From the repository root:
 
 ```sh
-python3.13 -m venv .venv
-.venv/bin/python -m pip install --only-binary=:all: --require-hashes -r requirements-serving.txt -r requirements-frontend.txt
-.venv/bin/python -m unittest discover -s tests -v
 mkdir -p generated-models
 .venv/bin/python -m src.artifacts --data data/Metro_Interstate_Traffic_Volume.csv --output generated-models/pre2017-v1
 ```

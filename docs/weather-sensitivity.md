@@ -40,12 +40,13 @@ experiment only; they do not trigger policy selection or tuning.
 
 ## Reproduce
 
-Use the locked Python 3.13 source-checkout environment in
-[CONTRIBUTING](../CONTRIBUTING.md). No new dependencies, services or model files:
+Complete the [maintained setup](../README.md#maintained-setup), including the
+patched-interpreter check. Run from the repository root; no additional
+dependencies, services or model files are needed:
 
 ```sh
-python -m unittest discover -s tests -v
-python -m src.weather_sensitivity --data data/Metro_Interstate_Traffic_Volume.csv --output weather-result.json
+.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m src.weather_sensitivity --data data/Metro_Interstate_Traffic_Volume.csv --output weather-result.json
 ```
 
 The output path must be new; omitted output prints JSON. A full run fits 106
