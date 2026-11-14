@@ -6,8 +6,8 @@ The maintained scope is offline evaluation and trusted local API/frontend
 reproduction. This is retrospective same-hour estimation, not an advance
 forecast or an authenticated public service.
 
-Release **v0.1.0** supports the maintained workflow below. See the
-[changelog](CHANGELOG.md#010--2026-11-04) for its scope and migration notes.
+Release **v0.1.1** supports the maintained workflow below. See the
+[changelog](CHANGELOG.md#011--2026-11-14) for its scope and migration notes.
 
 ## Maintained setup
 
@@ -21,7 +21,7 @@ run subsequent commands from the repository root.
 ```sh
 git clone https://github.com/rohithobillaneni/Metro-Interstate-Prediction.git
 cd Metro-Interstate-Prediction
-git checkout v0.1.0
+git checkout v0.1.1
 python3.13 --version
 python3.13 -m venv .venv
 .venv/bin/python --version
