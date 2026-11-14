@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Refresh the official Python container base to an immutable image containing
+  Debian APT 3.0.4, which fixes CVE-2026-109518. The image also updates tzdata
+  from 2026e to 2026f; Python remains 3.13.18. Rebuild both services and train
+  with the updated backend image before serving. Dependency locks, application
+  code and benchmark checks are unchanged. Zlib remains at the earlier
+  package version; see the [remaining findings](SECURITY.md#container-base-refresh--14-november-2026).
+
 ## 0.1.1 — 2026-11-14
 
 - Update the serving lock's transitive `opentelemetry-api` dependency from 1.45.1

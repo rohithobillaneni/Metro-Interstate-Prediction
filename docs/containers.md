@@ -85,8 +85,13 @@ CORS/XSRF protections remain enabled.
 The Dockerfiles pin the official Python3.13-slim multi-platform manifest digest.
 Dependency hashes pin packages separately. The current digest was resolved from
 the official `library/python` registry manifest and independently hashed on
-27 October2026. Its Linux amd64 and arm64 images contain Python3.13.18 and
-Debian13. The Python patch includes fixes for compromised TLS certificates,
+14 November2026. Its Linux amd64 and arm64 images contain Python3.13.18 and
+Debian13. The base refresh after v0.1.1 contains APT3.0.4, fixing
+[CVE-2026-109518](https://security-tracker.debian.org/tracker/CVE-2026-109518),
+and tzdata2026f. The maintained Dockerfiles do not invoke APT. Zlib is unchanged;
+see the [remaining findings](../SECURITY.md#container-base-refresh--14-november-2026).
+Published v0.1.1 retains the earlier base; this refresh is recorded under
+[Unreleased](../CHANGELOG.md#unreleased). The Python patch includes fixes for compromised TLS certificates,
 `TemporaryDirectory` cleanup and `tar_filter`; see the
 [upstream release comparison](https://github.com/python/cpython/compare/v3.13.17...v3.13.18).
 This does not imply those issues were exploitable through Metro.
