@@ -1,12 +1,20 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-11-14
 
 - Add `python -m src.predict` for bounded offline JSON batches using the existing
   API validation and independently pinned local model bundle. Reports preserve
   input order and record input/manifest digests; invalid batches fail before
   output, and existing reports are never overwritten. No training, evaluation
   protocol or historical benchmark changes; 2018 remains unscored.
+
+The batch CLI is additive; existing API requests and evaluation protocols are
+unchanged. Follow the tagged source-checkout setup and train a fresh reviewed
+local bundle, retaining its manifest digest separately. No dependency or
+container-base change is included. Failed or interrupted disk writes may leave
+a partial new file; preserve it and choose a new output path. The unresolved
+zlib findings and trusted-local support boundary in [SECURITY.md](SECURITY.md)
+remain in force. This release does not add a package-registry distribution.
 
 ## 0.1.2 — 2026-11-14
 

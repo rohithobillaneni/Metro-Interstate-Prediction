@@ -6,8 +6,8 @@ The maintained scope is offline evaluation and trusted local API/frontend
 reproduction. This is retrospective same-hour estimation, not an advance
 forecast or an authenticated public service.
 
-Release **v0.1.2** supports the maintained workflow below. See the
-[changelog](CHANGELOG.md#012--2026-11-14) for its scope and migration notes.
+Release **v0.2.0** supports the maintained workflow below. See the
+[changelog](CHANGELOG.md#020--2026-11-14) for its scope and migration notes.
 
 ## Maintained setup
 
@@ -21,7 +21,7 @@ run subsequent commands from the repository root.
 ```sh
 git clone https://github.com/rohithobillaneni/Metro-Interstate-Prediction.git
 cd Metro-Interstate-Prediction
-git checkout v0.1.2
+git checkout v0.2.0
 python3.13 --version
 python3.13 -m venv .venv
 .venv/bin/python --version
@@ -76,9 +76,9 @@ That guide requires Docker Engine and Compose v2 and trains the model inside the
 same backend image used for serving. It is a local reproduction path, not a
 public deployment guide.
 
-On **main (unreleased)**, [offline batch inference](docs/batch-inference.md) also
-predicts an ordered JSON batch from the same trusted bundle without starting the
-API. This command is not included in the v0.1.2 checkout above.
+[Offline batch inference](docs/batch-inference.md) predicts an ordered JSON batch
+from the same trusted bundle without starting the API. It records input and
+model-manifest digests and refuses to overwrite an existing output file.
 
 ## Data, contributions and history
 

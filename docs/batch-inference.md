@@ -1,13 +1,13 @@
 # Predict a batch without running the API
 
-This command is available on **main (unreleased)**, not in v0.1.2. It uses the
+This command is available in **v0.2.0**. It uses the
 existing trained bundle and API request schema to estimate multiple independent
 same-hour traffic volumes locally. It does not train, score targets, call a
 service or establish advance forecasting accuracy.
 
-Complete the [maintained setup](../README.md#maintained-setup), then switch this
-checkout to `main` for the new command. The same locked serving dependencies
-apply; no additional package is needed. Train a fresh bundle using the
+Complete the [maintained setup](../README.md#maintained-setup) at `v0.2.0`.
+The same locked serving dependencies apply; no additional package is needed.
+Train a fresh bundle using the
 [local training instructions](serving.md#train-a-fresh-bundle) and retain the
 returned manifest digest separately.
 
