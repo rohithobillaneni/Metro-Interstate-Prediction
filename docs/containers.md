@@ -90,8 +90,8 @@ Debian13. The base refresh after v0.1.1 contains APT3.0.4, fixing
 [CVE-2026-109518](https://security-tracker.debian.org/tracker/CVE-2026-109518),
 and tzdata2026f. The maintained Dockerfiles do not invoke APT. Zlib is unchanged;
 see the [remaining findings](../SECURITY.md#container-base-refresh--14-november-2026).
-Published v0.1.1 retains the earlier base; this refresh is recorded under
-[Unreleased](../CHANGELOG.md#unreleased). The Python patch includes fixes for compromised TLS certificates,
+Published v0.1.1 retains the earlier base; this refresh is included in
+[v0.1.2](../CHANGELOG.md#012--2026-11-14). The Python patch includes fixes for compromised TLS certificates,
 `TemporaryDirectory` cleanup and `tar_filter`; see the
 [upstream release comparison](https://github.com/python/cpython/compare/v3.13.17...v3.13.18).
 This does not imply those issues were exploitable through Metro.
