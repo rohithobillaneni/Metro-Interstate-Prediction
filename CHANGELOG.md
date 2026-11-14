@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.2 — 2026-11-14
+
 - Refresh the official Python container base to an immutable image containing
   Debian APT 3.0.4, which fixes CVE-2026-109518. The image also updates tzdata
   from 2026e to 2026f; Python remains 3.13.18. Rebuild both services and train

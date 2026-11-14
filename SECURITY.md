@@ -71,4 +71,6 @@ the fixed package is installed in this image.
 
 The supported scope remains trusted local reproduction. Further zlib maintenance
 is pending; this is not a clean-image or public-service security guarantee.
-Published v0.1.1 is unchanged; see [Unreleased](CHANGELOG.md#unreleased).
+Published v0.1.1 is unchanged. The refresh is included in
+[v0.1.2](CHANGELOG.md#012--2026-11-14); rebuild both services and train a fresh
+bundle in the updated backend image before serving.
