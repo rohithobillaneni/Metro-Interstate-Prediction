@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.1.1 — 2026-11-14
+
+- Update the serving lock's transitive `opentelemetry-api` dependency from 1.45.1
+  to 1.45.2 for [GHSA-mf5v-w3w3-f6cg](https://github.com/open-telemetry/opentelemetry-python/security/advisories/GHSA-mf5v-w3w3-f6cg),
+  which bounds trace-context parsing and removes overlapping regex alternatives.
+  All other dependency pins, evaluation protocols and benchmark checks are unchanged.
+- Source-checkout users should reinstall the maintained hash-locked requirements
+  and reproduce training with a fresh trusted model bundle. This serving-only
+  dependency change does not itself invalidate an existing bundle: its manifest
+  records evaluation dependencies, not the serving-lock digest. Container users should
+  rebuild the backend and train inside that image before serving.
+
+The supported scope remains trusted local reproduction. No exposed Metro attack
+path or public-service security guarantee is claimed. Historical results remain
+unchanged and 2018 remains unscored.
+
 ## 0.1.0 — 2026-11-04
 
 This first supported release uses the source-checkout setup in README.md. The
