@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `python -m src.predict` for bounded offline JSON batches using the existing
+  API validation and independently pinned local model bundle. Reports preserve
+  input order and record input/manifest digests; invalid batches fail before
+  output, and existing reports are never overwritten. No training, evaluation
+  protocol or historical benchmark changes; 2018 remains unscored.
+
 ## 0.1.2 — 2026-11-14
 
 - Refresh the official Python container base to an immutable image containing
