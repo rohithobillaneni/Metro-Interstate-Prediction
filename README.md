@@ -76,6 +76,10 @@ That guide requires Docker Engine and Compose v2 and trains the model inside the
 same backend image used for serving. It is a local reproduction path, not a
 public deployment guide.
 
+On **main (unreleased)**, [offline batch inference](docs/batch-inference.md) also
+predicts an ordered JSON batch from the same trusted bundle without starting the
+API. This command is not included in the v0.1.2 checkout above.
+
 ## Data, contributions and history
 
 Source code is [MIT licensed](LICENSE). The bundled UCI Metro Interstate Traffic
